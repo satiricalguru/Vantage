@@ -10439,7 +10439,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
     "title": "Berserk Animated Wallpaper",
     "category": "ai-art",
     "type": "video",
-    "previewUrl": "https://motionbgs.com/i/c/364x205/media/5383/guts-berserk.jpg",
+    "previewUrl": "resources/thumbnails/motionbgs-guts-berserk.jpg",
     "sourceUrl": "https://motionbgs.com/media/2754/berserk-animated.1920x1080.mp4",
     "resolution": {
       "width": 1920,
@@ -10839,7 +10839,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
     "title": "Kaneki and Touka Love (Tokyo Ghoul)",
     "category": "anime",
     "type": "video",
-    "previewUrl": "https://motionbgs.com/i/c/364x205/media/2189/ken-kaneki-tokyo-ghoul.jpg",
+    "previewUrl": "resources/thumbnails/motionbgs-kaneki-and-touka-love-tokyo-ghoul.jpg",
     "sourceUrl": "https://motionbgs.com/media/2285/kaneki-and-touka-love-tokyo-ghoul.1920x1080.mp4",
     "resolution": {
       "width": 1920,
