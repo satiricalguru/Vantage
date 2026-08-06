@@ -162,7 +162,7 @@ export const App: React.FC = () => {
         <div className="space-y-1 border-t border-line pt-3">
           <button
             onClick={() => openWallpaperFolder()}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-ink bg-panel-hover hover:bg-line border border-line transition mb-1.5"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-ink-dim hover:text-ink hover:bg-panel-hover transition"
             title="Open local wallpapers folder in Finder to drag and drop MP4 / MOV files"
           >
             <FolderDown className="w-4 h-4 text-glow" />
@@ -171,9 +171,9 @@ export const App: React.FC = () => {
 
           <button
             onClick={() => importFile()}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-glow bg-glow/10 hover:bg-glow/20 border border-glow/30 transition mb-2"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-ink-dim hover:text-ink hover:bg-panel-hover transition"
           >
-            <PlusCircle className="w-4 h-4" />
+            <PlusCircle className="w-4 h-4 text-glow" />
             <span>Import Personal File</span>
           </button>
 

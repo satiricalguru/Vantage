@@ -30,7 +30,17 @@ export default defineConfig({
         '@': resolve(__dirname, 'src/renderer')
       }
     },
-    plugins: [react()],
+    plugins: [
+      react(),
+      {
+        // Tighten CSP for production builds: the bundled renderer needs no inline scripts
+        name: 'strict-csp',
+        apply: 'build',
+        transformIndexHtml(html) {
+          return html.replace("script-src 'self' 'unsafe-inline'", "script-src 'self'")
+        }
+      }
+    ],
     build: {
       rollupOptions: {
         input: {
