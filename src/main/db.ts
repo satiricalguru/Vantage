@@ -104,6 +104,19 @@ export function initDatabase(): Database.Database {
   return db
 }
 
+function resolveMediaUrl(url: string | undefined | null): string {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('media://')) {
+    return url
+  }
+  if (url.startsWith('resources/')) {
+    const baseDir = app.isPackaged ? process.resourcesPath : app.getAppPath()
+    const fullPath = path.join(baseDir, url)
+    return `media://${fullPath}`
+  }
+  return url
+}
+
 export function getAllWallpapers(category?: string, query?: string): WallpaperItem[] {
   const database = initDatabase()
   let sql = 'SELECT * FROM wallpapers'
@@ -147,8 +160,8 @@ export function getAllWallpapers(category?: string, query?: string): WallpaperIt
     attribution: r.attribution,
     resolution: { width: r.resolution_w, height: r.resolution_h },
     duration: r.duration,
-    previewUrl: r.previewUrl,
-    sourceUrl: r.sourceUrl,
+    previewUrl: resolveMediaUrl(r.previewUrl),
+    sourceUrl: resolveMediaUrl(r.sourceUrl),
     generatorId: r.generatorId,
     colorPalette: r.colorPalette ? JSON.parse(r.colorPalette) : undefined,
     is_favorite: Boolean(r.is_favorite)
@@ -170,13 +183,14 @@ export function getWallpaperById(id: string): WallpaperItem | null {
     attribution: row.attribution,
     resolution: { width: row.resolution_w, height: row.resolution_h },
     duration: row.duration,
-    previewUrl: row.previewUrl,
-    sourceUrl: row.sourceUrl,
+    previewUrl: resolveMediaUrl(row.previewUrl),
+    sourceUrl: resolveMediaUrl(row.sourceUrl),
     generatorId: row.generatorId,
     colorPalette: row.colorPalette ? JSON.parse(row.colorPalette) : undefined,
     is_favorite: Boolean(row.is_favorite)
   }
 }
+
 
 export function setDisplayAssignment(displayId: string, wallpaperId: string): void {
   const database = initDatabase()
