@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useGalleryStore } from '../store/useGalleryStore'
 import type { AppSettings, CacheStatus } from '../../../shared/types'
-import { Zap, HardDrive, Key, RefreshCw, AppWindow } from 'lucide-react'
+import { Zap, HardDrive, RefreshCw, AppWindow } from 'lucide-react'
 
 export const Settings: React.FC = () => {
   const { displays, fetchDisplays } = useGalleryStore()
@@ -9,8 +9,6 @@ export const Settings: React.FC = () => {
     openAtLogin: true,
     showInDock: false,
     showOnLockScreen: true,
-    pexelsApiKey: '',
-    unsplashApiKey: '',
     maxCacheSizeGb: 5,
     theme: 'dark'
   })
@@ -190,44 +188,6 @@ export const Settings: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* API Keys */}
-      <section className="bg-panel border border-line rounded-xl p-5 space-y-4">
-        <div className="flex items-center gap-2 text-glow font-mono text-xs uppercase tracking-wider">
-          <Key className="w-4 h-4" />
-          <span>Content Source API Keys</span>
-        </div>
-
-        <div className="space-y-3">
-          <div className="p-3 bg-void border border-line rounded-lg space-y-2">
-            <div className="text-sm font-semibold text-ink">Pexels API Key</div>
-            <div className="text-xs text-ink-dim">
-              Optional. Provide your own Pexels API key to enable curated photo wallpapers.
-            </div>
-            <input
-              type="text"
-              value={settings.pexelsApiKey}
-              onChange={(e) => saveSettingsDebounced({ pexelsApiKey: e.target.value })}
-              placeholder="Enter Pexels API key..."
-              className="w-full bg-panel border border-line rounded-lg px-3 py-1.5 text-xs text-ink placeholder-ink-dim focus:outline-none focus:border-glow/50 font-mono"
-            />
-          </div>
-
-          <div className="p-3 bg-void border border-line rounded-lg space-y-2">
-            <div className="text-sm font-semibold text-ink">Unsplash API Key</div>
-            <div className="text-xs text-ink-dim">
-              Optional. Provide your own Unsplash API key to enable curated photography wallpapers.
-            </div>
-            <input
-              type="text"
-              value={settings.unsplashApiKey}
-              onChange={(e) => saveSettingsDebounced({ unsplashApiKey: e.target.value })}
-              placeholder="Enter Unsplash API key..."
-              className="w-full bg-panel border border-line rounded-lg px-3 py-1.5 text-xs text-ink placeholder-ink-dim focus:outline-none focus:border-glow/50 font-mono"
-            />
-          </div>
         </div>
       </section>
 

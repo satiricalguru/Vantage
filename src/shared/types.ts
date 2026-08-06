@@ -30,8 +30,8 @@ export interface AppSettings {
   openAtLogin: boolean
   showInDock: boolean
   showOnLockScreen: boolean
-  pexelsApiKey: string
-  unsplashApiKey: string
+  pexelsApiKey?: string
+  unsplashApiKey?: string
   maxCacheSizeGb: number
   theme: string
 }
@@ -49,8 +49,6 @@ export const DEFAULT_WALLPAPER_ID = 'local-v8'
 export const ALLOWED_SETTINGS_KEYS: ReadonlySet<string> = new Set([
   'showInDock',
   'showOnLockScreen',
-  'pexelsApiKey',
-  'unsplashApiKey',
   'maxCacheSizeGb',
   'theme',
   'openAtLogin'
