@@ -24,7 +24,6 @@ import {
   PlusCircle,
   Minus,
   X,
-  Video,
   Camera
 } from 'lucide-react'
 
@@ -96,7 +95,6 @@ export const App: React.FC = () => {
     { id: 'space', label: 'Space & NASA', icon: Rocket },
     { id: 'generative', label: 'Generative Canvas', icon: Sparkles },
     { id: 'ai-art', label: 'AI Art Pipeline', icon: Palette },
-    { id: 'pexels', label: 'Pexels Live Search', icon: Video },
     { id: 'unsplash', label: 'Unsplash Live Search', icon: Camera },
     { id: 'imported', label: 'My Imports', icon: FolderDown },
     { id: 'favorites', label: 'Favorites', icon: Heart }

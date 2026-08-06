@@ -283,9 +283,9 @@ export const Gallery: React.FC = () => {
         ) : filteredWallpapers.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-ink-dim space-y-2">
             <p className="text-sm text-ink">No wallpapers match your selected format or query.</p>
-            {activeCategory === 'pexels' || activeCategory === 'unsplash' ? (
+            {activeCategory === 'unsplash' ? (
               <p className="font-mono text-xs text-ink-dim">
-                {activeCategory === 'pexels' ? 'Pexels' : 'Unsplash'} search needs an API key — add it in Preferences &amp; Energy, then try again.
+                Unsplash search needs an API key — add it in Preferences &amp; Energy, then try again.
               </p>
             ) : (
               <p className="font-mono text-xs text-ink-dim">
