@@ -283,15 +283,9 @@ export const Gallery: React.FC = () => {
         ) : filteredWallpapers.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-ink-dim space-y-2">
             <p className="text-sm text-ink">No wallpapers match your selected format or query.</p>
-            {activeCategory === 'unsplash' ? (
-              <p className="font-mono text-xs text-ink-dim">
-                Unsplash search needs an API key — add it in Preferences &amp; Energy, then try again.
-              </p>
-            ) : (
-              <p className="font-mono text-xs text-ink-dim">
-                Try switching format tabs or selecting another catalog category.
-              </p>
-            )}
+            <p className="font-mono text-xs text-ink-dim">
+              Try switching format tabs or selecting another catalog category.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
