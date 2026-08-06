@@ -38,6 +38,13 @@ export function createWallpaperWindow(display: Display): BrowserWindow {
     }
   })
 
+  win.webContents.on('console-message', (event) => {
+    const line = event.lineNumber ?? ''
+    if (event.level === 'error' || event.level === 'warning') {
+      console.log(`[WallpaperRenderer:${event.level}] ${event.message} (line ${line})`)
+    }
+  })
+
   win.setIgnoreMouseEvents(true, { forward: true })
   win.setVisibleOnAllWorkspaces(true, {
     visibleOnFullScreen: true,
@@ -130,6 +137,18 @@ export function setGlobalPlaybackState(isPlaying: boolean): void {
 
 export function getGlobalPlaybackState(): boolean {
   return isGlobalPlaying
+}
+
+export function broadcastCacheProgress(progress: {
+  url: string
+  received: number
+  total: number
+  pct: number
+}): void {
+  for (const win of wallpaperWindows.values()) {
+    if (win.isDestroyed()) continue
+    win.webContents.send('cache:progress', progress)
+  }
 }
 
 export function setLockScreenMode(isLocked: boolean): void {

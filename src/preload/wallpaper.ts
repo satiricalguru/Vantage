@@ -16,5 +16,11 @@ contextBridge.exposeInMainWorld('wallpaperApi', {
     const handler = (_event: any, isPlaying: boolean) => callback(isPlaying)
     ipcRenderer.on('playback:state-changed', handler)
     return () => ipcRenderer.removeListener('playback:state-changed', handler)
+  },
+  ensureCached: (url: string) => ipcRenderer.invoke('cache:ensure', url),
+  onCacheProgress: (callback: (data: { url: string; received: number; total: number; pct: number }) => void) => {
+    const handler = (_event: any, data: any) => callback(data)
+    ipcRenderer.on('cache:progress', handler)
+    return () => ipcRenderer.removeListener('cache:progress', handler)
   }
 })

@@ -224,12 +224,12 @@ export const Gallery: React.FC = () => {
     searchQuery,
     setSearchQuery,
     formatFilter,
-    setFormatFilter
+    setFormatFilter,
+    activeCategory
   } = useGalleryStore()
 
   const filteredWallpapers = wallpapers.filter((item) => {
     if (formatFilter === 'video') return item.type === 'video'
-    if (formatFilter === 'still') return item.type !== 'video'
     return true
   })
 
@@ -270,16 +270,6 @@ export const Gallery: React.FC = () => {
             <Play className="w-3 h-3 fill-current" />
             <span>Live Videos</span>
           </button>
-          <button
-            onClick={() => setFormatFilter('still')}
-            className={`px-3 py-1 rounded-md text-xs font-medium transition ${
-              formatFilter === 'still'
-                ? 'bg-glow/20 text-glow border border-glow/30'
-                : 'text-ink-dim hover:text-ink'
-            }`}
-          >
-            Still Artworks
-          </button>
         </div>
       </div>
 
@@ -293,9 +283,15 @@ export const Gallery: React.FC = () => {
         ) : filteredWallpapers.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-ink-dim space-y-2">
             <p className="text-sm text-ink">No wallpapers match your selected format or query.</p>
-            <p className="font-mono text-xs text-ink-dim">
-              Try switching format tabs or selecting another catalog category.
-            </p>
+            {activeCategory === 'pexels' || activeCategory === 'unsplash' ? (
+              <p className="font-mono text-xs text-ink-dim">
+                {activeCategory === 'pexels' ? 'Pexels' : 'Unsplash'} search needs an API key — add it in Preferences &amp; Energy, then try again.
+              </p>
+            ) : (
+              <p className="font-mono text-xs text-ink-dim">
+                Try switching format tabs or selecting another catalog category.
+              </p>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

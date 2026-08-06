@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useGalleryStore } from '../store/useGalleryStore'
 import type { AppSettings, CacheStatus } from '../../../shared/types'
 import { Zap, HardDrive, Key, RefreshCw, AppWindow } from 'lucide-react'
@@ -17,6 +17,26 @@ export const Settings: React.FC = () => {
   const [clearedBytes, setClearedBytes] = useState<number | null>(null)
 
   const [cacheStatus, setCacheStatus] = useState<CacheStatus | null>(null)
+
+  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const saveSettingsDebounced = (partial: Partial<AppSettings>) => {
+    setSettingsState((prev) => ({ ...prev, ...partial }))
+    if (saveTimeout.current) clearTimeout(saveTimeout.current)
+    saveTimeout.current = setTimeout(() => {
+      saveTimeout.current = null
+      if (window.galleryApi) window.galleryApi.setSettings(partial)
+    }, 400)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeout.current) {
+        clearTimeout(saveTimeout.current)
+        saveTimeout.current = null
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (window.galleryApi) {
@@ -189,7 +209,7 @@ export const Settings: React.FC = () => {
             <input
               type="text"
               value={settings.pexelsApiKey}
-              onChange={(e) => handleSaveSettings({ pexelsApiKey: e.target.value })}
+              onChange={(e) => saveSettingsDebounced({ pexelsApiKey: e.target.value })}
               placeholder="Enter Pexels API key..."
               className="w-full bg-panel border border-line rounded-lg px-3 py-1.5 text-xs text-ink placeholder-ink-dim focus:outline-none focus:border-glow/50 font-mono"
             />
@@ -203,7 +223,7 @@ export const Settings: React.FC = () => {
             <input
               type="text"
               value={settings.unsplashApiKey}
-              onChange={(e) => handleSaveSettings({ unsplashApiKey: e.target.value })}
+              onChange={(e) => saveSettingsDebounced({ unsplashApiKey: e.target.value })}
               placeholder="Enter Unsplash API key..."
               className="w-full bg-panel border border-line rounded-lg px-3 py-1.5 text-xs text-ink placeholder-ink-dim focus:outline-none focus:border-glow/50 font-mono"
             />
@@ -225,7 +245,7 @@ export const Settings: React.FC = () => {
               Evicts downloaded remote wallpaper videos and images.
               {cacheStatus && (
                 <span className="block mt-1 font-mono text-[11px] text-glow">
-                  Current Usage: {(cacheStatus.usedBytes / (1024 * 1024)).toFixed(1)} MB / {(cacheStatus.limitBytes / (1024 * 1024 * 1024)).toFixed(1)} GB limit
+                  Current Usage: {(cacheStatus.usedBytes / (1024 * 1024)).toFixed(1)} MB / {(cacheStatus.limitBytes / (1024 * 1024 * 1024)).toFixed(1)} GB limit · {cacheStatus.count} cached {cacheStatus.count === 1 ? 'wallpaper' : 'wallpapers'}
                 </span>
               )}
             </div>

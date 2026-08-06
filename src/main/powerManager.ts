@@ -1,17 +1,21 @@
 import { powerMonitor, screen } from 'electron'
-import { setGlobalPlaybackState, setPerformanceModeForDisplay, setLockScreenMode } from './wallpaperWindow'
+import { setGlobalPlaybackState, setPerformanceModeForDisplay, setLockScreenMode, getGlobalPlaybackState } from './wallpaperWindow'
 import { getDisplayAssignment } from './db'
 import { refreshTrayMenu } from './tray'
 import store from './store'
+
+let playbackBeforeLock: boolean | null = null
 
 export function initPowerManager(): void {
   powerMonitor.on('lock-screen', () => {
     const showOnLockScreen = store.get('showOnLockScreen', true)
     console.log(`[PowerManager] Screen locked. showOnLockScreen: ${showOnLockScreen}`)
+    // Remember the user's playback state so we can restore it exactly on unlock
+    playbackBeforeLock = getGlobalPlaybackState()
     if (showOnLockScreen) {
       setLockScreenMode(true)
-      setGlobalPlaybackState(true)
     } else {
+      setLockScreenMode(false)
       setGlobalPlaybackState(false)
     }
     refreshTrayMenu()
@@ -20,7 +24,11 @@ export function initPowerManager(): void {
   powerMonitor.on('unlock-screen', () => {
     console.log('[PowerManager] Screen unlocked. Restoring normal desktop wallpaper mode.')
     setLockScreenMode(false)
-    setGlobalPlaybackState(true)
+    // Restore the exact state the user had before locking; never force-play over a pause
+    if (playbackBeforeLock !== null) {
+      setGlobalPlaybackState(playbackBeforeLock)
+      playbackBeforeLock = null
+    }
     refreshTrayMenu()
   })
 

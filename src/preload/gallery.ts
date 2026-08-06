@@ -24,5 +24,12 @@ contextBridge.exposeInMainWorld('galleryApi', {
     const handler = (_event: any, displays: any[]) => callback(displays)
     ipcRenderer.on('display:changed', handler)
     return () => ipcRenderer.removeListener('display:changed', handler)
-  }
+  },
+  onCatalogChanged: (callback: () => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('catalog:changed', handler)
+    return () => ipcRenderer.removeListener('catalog:changed', handler)
+  },
+  minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
+  closeWindow: () => ipcRenderer.invoke('window:close')
 })

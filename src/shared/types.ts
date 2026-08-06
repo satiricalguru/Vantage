@@ -38,6 +38,7 @@ export interface AppSettings {
 
 export interface CacheStatus {
   usedBytes: number
+  count: number
   limitBytes: number
 }
 
@@ -51,5 +52,6 @@ export const ALLOWED_SETTINGS_KEYS: ReadonlySet<string> = new Set([
   'pexelsApiKey',
   'unsplashApiKey',
   'maxCacheSizeGb',
-  'theme'
+  'theme',
+  'openAtLogin'
 ])

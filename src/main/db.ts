@@ -70,11 +70,12 @@ export function initDatabase(): Database.Database {
 
   const syncCatalog = db!.transaction((items: WallpaperItem[]) => {
     // Purge outdated catalog entries from database that are no longer in INITIAL_WALLPAPERS and not user imported
+    // (remote Pexels/Unsplash results are kept: they are valid live-search items)
     const placeHolders = items.map(() => '?').join(',')
     const itemIds = items.map((i) => i.id)
     try {
-      db!.prepare(`UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (SELECT id FROM wallpapers WHERE source != 'user' AND id NOT LIKE 'user-%' AND id NOT IN (${placeHolders}))`).run(DEFAULT_WALLPAPER_ID, ...itemIds)
-      db!.prepare(`DELETE FROM wallpapers WHERE source != 'user' AND id NOT LIKE 'user-%' AND id NOT IN (${placeHolders})`).run(...itemIds)
+      db!.prepare(`UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (SELECT id FROM wallpapers WHERE source != 'user' AND id NOT LIKE 'user-%' AND id NOT LIKE 'pexels-%' AND id NOT LIKE 'unsplash-%' AND id NOT IN (${placeHolders}))`).run(DEFAULT_WALLPAPER_ID, ...itemIds)
+      db!.prepare(`DELETE FROM wallpapers WHERE source != 'user' AND id NOT LIKE 'user-%' AND id NOT LIKE 'pexels-%' AND id NOT LIKE 'unsplash-%' AND id NOT IN (${placeHolders})`).run(...itemIds)
     } catch (err) {
       console.warn('[DB Sync] Warning during catalog cleanup:', err)
     }
@@ -124,16 +125,13 @@ export function getAllWallpapers(category?: string, query?: string): WallpaperIt
   const params: any[] = []
   const conditions: string[] = []
 
-  if (category && category !== 'all' && category !== 'favorites' && category !== 'videos' && category !== 'stills') {
+  if (category && category !== 'all' && category !== 'favorites' && category !== 'videos') {
     conditions.push('category = ?')
     params.push(category)
   } else if (category === 'favorites') {
     conditions.push('is_favorite = 1')
   } else if (category === 'videos') {
     conditions.push('type = ?')
-    params.push('video')
-  } else if (category === 'stills') {
-    conditions.push('type != ?')
     params.push('video')
   }
 
@@ -260,4 +258,21 @@ export function addWallpaperToDb(item: WallpaperItem): void {
     colorPalette: item.colorPalette ? JSON.stringify(item.colorPalette) : null,
     added_at: Date.now()
   })
+}
+
+/** Remove locally-scanned folder entries whose source file no longer exists */
+export function pruneUserFolderEntries(keptIds: string[]): void {
+  const database = initDatabase()
+  const placeHolders = keptIds.map(() => '?').join(',')
+  try {
+    if (keptIds.length > 0) {
+      database.prepare(
+        `DELETE FROM wallpapers WHERE source = 'user' AND id LIKE 'user-folder-%' AND id NOT IN (${placeHolders})`
+      ).run(...keptIds)
+    } else {
+      database.prepare(`DELETE FROM wallpapers WHERE source = 'user' AND id LIKE 'user-folder-%'`).run()
+    }
+  } catch (err) {
+    console.warn('[DB] Error pruning removed folder entries:', err)
+  }
 }

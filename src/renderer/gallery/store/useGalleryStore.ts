@@ -4,7 +4,7 @@ export type { WallpaperItem, DisplayInfo }
 
 interface GalleryStore {
   activeCategory: string
-  formatFilter: 'all' | 'video' | 'still'
+  formatFilter: 'all' | 'video'
   searchQuery: string
   wallpapers: WallpaperItem[]
   displays: DisplayInfo[]
@@ -14,7 +14,7 @@ interface GalleryStore {
   isLoading: boolean
 
   setActiveCategory: (cat: string) => void
-  setFormatFilter: (filter: 'all' | 'video' | 'still') => void
+  setFormatFilter: (filter: 'all' | 'video') => void
   setSearchQuery: (q: string) => void
   setSelectedDisplayId: (id: number) => void
   setSelectedWallpaper: (item: WallpaperItem | null) => void
@@ -42,9 +42,8 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
   isLoading: false,
 
   setActiveCategory: (category) => {
-    let fmt: 'all' | 'video' | 'still' = 'all'
+    let fmt: 'all' | 'video' = 'all'
     if (category === 'videos') fmt = 'video'
-    if (category === 'stills') fmt = 'still'
     set({ activeCategory: category, formatFilter: fmt })
     get().fetchWallpapers()
   },

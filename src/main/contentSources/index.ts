@@ -1,7 +1,23 @@
-import { WallpaperItem } from '../../shared/types'
+import { DEFAULT_WALLPAPER_ID, WallpaperItem } from '../../shared/types'
 export type { WallpaperItem }
 
 export const INITIAL_WALLPAPERS: WallpaperItem[] = [
+  {
+    "id": DEFAULT_WALLPAPER_ID,
+    "title": "Aurora Gradient Canvas",
+    "category": "generative",
+    "type": "generative",
+    "previewUrl": "",
+    "sourceUrl": "",
+    "resolution": {
+      "width": 3840,
+      "height": 2160
+    },
+    "source": "local",
+    "license": "In-House Procedural Generator",
+    "attribution": "Vantage Built-in",
+    "generatorId": "aurora"
+  },
   {
     "id": "motionbgs-celestial-veil",
     "title": "Celestial Veil",

@@ -10,7 +10,6 @@ import type { WallpaperItem, DisplayInfo, AppSettings, CacheStatus } from '../..
 import {
   Compass,
   Film,
-  Image as ImageIcon,
   Flame,
   Shield,
   Gamepad2,
@@ -22,7 +21,11 @@ import {
   Heart,
   Settings as SettingsIcon,
   ShieldCheck,
-  PlusCircle
+  PlusCircle,
+  Minus,
+  X,
+  Video,
+  Camera
 } from 'lucide-react'
 
 declare global {
@@ -43,6 +46,9 @@ declare global {
       setLoginAtLogin: (openAtLogin: boolean) => Promise<boolean>
       openExternal: (url: string) => void
       onDisplayChanged: (callback: (displays: DisplayInfo[]) => void) => () => void
+      onCatalogChanged: (callback: () => void) => () => void
+      minimizeWindow: () => Promise<void>
+      closeWindow: () => Promise<void>
     }
   }
 }
@@ -70,14 +76,19 @@ export const App: React.FC = () => {
       const unsub = window.galleryApi.onDisplayChanged(() => {
         fetchDisplays()
       })
-      return () => unsub()
+      const unsubCatalog = window.galleryApi.onCatalogChanged(() => {
+        fetchWallpapers()
+      })
+      return () => {
+        unsub()
+        unsubCatalog()
+      }
     }
   }, [])
 
   const categories = [
     { id: 'all', label: 'All Wallpapers', icon: Compass },
     { id: 'videos', label: 'Live Video Loops', icon: Film },
-    { id: 'stills', label: 'Static Still Artworks', icon: ImageIcon },
     { id: 'anime', label: 'Anime World', icon: Flame },
     { id: 'games', label: 'Gaming & Esports', icon: Gamepad2 },
     { id: 'heroes', label: 'Heroes & Comics', icon: Shield },
@@ -85,6 +96,8 @@ export const App: React.FC = () => {
     { id: 'space', label: 'Space & NASA', icon: Rocket },
     { id: 'generative', label: 'Generative Canvas', icon: Sparkles },
     { id: 'ai-art', label: 'AI Art Pipeline', icon: Palette },
+    { id: 'pexels', label: 'Pexels Live Search', icon: Video },
+    { id: 'unsplash', label: 'Unsplash Live Search', icon: Camera },
     { id: 'imported', label: 'My Imports', icon: FolderDown },
     { id: 'favorites', label: 'Favorites', icon: Heart }
   ]
@@ -102,6 +115,22 @@ export const App: React.FC = () => {
             <span className="text-[10px] font-mono text-glow px-1.5 py-0.5 rounded bg-glow/10 border border-glow/20 ml-auto select-none">
               macOS
             </span>
+            <div className="flex items-center gap-1 [-webkit-app-region:no-drag]">
+              <button
+                onClick={() => window.galleryApi?.minimizeWindow()}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-dim hover:text-ink hover:bg-panel-hover border border-transparent hover:border-line transition"
+                title="Minimize"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => window.galleryApi?.closeWindow()}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-dim hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition"
+                title="Close gallery (wallpapers keep running)"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {/* Navigation Categories */}
