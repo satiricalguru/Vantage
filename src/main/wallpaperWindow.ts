@@ -153,11 +153,6 @@ export function setLockScreenMode(isLocked: boolean): void {
   }
 }
 
-
-export function getWallpaperWindow(displayId: number): BrowserWindow | undefined {
-  return wallpaperWindows.get(displayId)
-}
-
 export function setupDisplayListeners(): void {
   screen.on('display-added', syncWallpaperWindows)
   screen.on('display-removed', syncWallpaperWindows)

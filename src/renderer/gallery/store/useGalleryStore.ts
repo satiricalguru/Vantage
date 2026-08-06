@@ -1,30 +1,6 @@
 import { create } from 'zustand'
-
-export interface WallpaperItem {
-  id: string
-  title: string
-  category: string
-  type: string
-  previewUrl: string
-  sourceUrl: string
-  resolution: { width: number; height: number }
-  duration?: number
-  source: string
-  license: string
-  attribution?: string
-  colorPalette?: string[]
-  generatorId?: string
-  is_favorite?: boolean
-}
-
-export interface DisplayInfo {
-  id: number
-  label: string
-  bounds: { x: number; y: number; width: number; height: number }
-  scaleFactor: number
-  assignedWallpaperId: string | null
-  performanceMode: string
-}
+import type { WallpaperItem, DisplayInfo } from '../../../shared/types'
+export type { WallpaperItem, DisplayInfo }
 
 interface GalleryStore {
   activeCategory: string
@@ -52,6 +28,7 @@ interface GalleryStore {
 }
 
 let fetchSeq = 0
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
 export const useGalleryStore = create<GalleryStore>((set, get) => ({
   activeCategory: 'all',
@@ -78,7 +55,11 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
 
   setSearchQuery: (query) => {
     set({ searchQuery: query })
-    get().fetchWallpapers()
+    // Debounce search to avoid a DB query per keystroke
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+    searchDebounceTimer = setTimeout(() => {
+      get().fetchWallpapers()
+    }, 250)
   },
 
   setSelectedDisplayId: (id) => set({ selectedDisplayId: id }),
@@ -89,7 +70,6 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
     const seq = ++fetchSeq
     set({ isLoading: true })
     if (window.galleryApi) {
-      await window.galleryApi.scanLocalFolder()
       const items = await window.galleryApi.getWallpapers(
         get().activeCategory,
         get().searchQuery
@@ -149,3 +129,4 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
     }
   }
 }))
+

@@ -1,14 +1,14 @@
-import { app, BrowserWindow, ipcMain, dialog, screen, shell, protocol, net } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, screen, shell, protocol } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { Readable } from 'node:stream'
-import { pathToFileURL } from 'node:url'
 import { initDatabase, getAllWallpapers, getWallpaperById, setDisplayAssignment, getDisplayAssignment, setPerformanceMode, toggleFavoriteInDb, addWallpaperToDb } from './db'
 import { syncWallpaperWindows, applyWallpaperToDisplay, setPerformanceModeForDisplay, setupDisplayListeners, getGlobalPlaybackState, setGalleryWindowGetter } from './wallpaperWindow'
 import { createTray } from './tray'
 import { initPowerManager } from './powerManager'
 import { clearCache, getCacheUsedBytes } from './cache'
-import Store from 'electron-store'
+import store from './store'
+import { ALLOWED_SETTINGS_KEYS, DEFAULT_WALLPAPER_ID } from '../shared/types'
 
 // Register media:// custom protocol for local video & asset streaming
 protocol.registerSchemesAsPrivileged([
@@ -24,7 +24,7 @@ protocol.registerSchemesAsPrivileged([
   }
 ])
 
-const store = new Store()
+// store is now imported from ./store (single shared instance)
 let galleryWindow: BrowserWindow | null = null
 let isQuitting = false
 
@@ -53,7 +53,7 @@ function scanVantageWallpapersFolder(): number {
           id,
           title: file.replace(/\.[^/.]+$/, ''),
           category: 'imported' as const,
-          type: (isVideo ? 'video' : 'user-import') as any,
+          type: isVideo ? 'video' : 'user-import',
           previewUrl: `media://${filePath}`,
           sourceUrl: `media://${filePath}`,
           resolution: { width: 3840, height: 2160 },
@@ -183,9 +183,18 @@ function registerIpcHandlers(): void {
   })
 
 
-  ipcMain.handle('settings:set', (_event, partial) => {
+  ipcMain.handle('settings:set', (_event, partial: Record<string, unknown>) => {
+    // Only allow whitelisted settings keys to be written
     for (const [key, val] of Object.entries(partial)) {
+      if (!ALLOWED_SETTINGS_KEYS.has(key)) {
+        console.warn(`[Settings] Rejected write to disallowed key: "${key}"`)
+        continue
+      }
       store.set(key, val)
+    }
+
+    if ('openAtLogin' in partial) {
+      app.setLoginItemSettings({ openAtLogin: Boolean(partial.openAtLogin) })
     }
 
     if ('showInDock' in partial) {
@@ -225,7 +234,7 @@ function registerIpcHandlers(): void {
       id: `imported-${Date.now()}`,
       title: filename.replace(/\.[^/.]+$/, ''),
       category: 'imported' as const,
-      type: (isVideo ? 'video' : 'user-import') as any,
+      type: isVideo ? 'video' : 'user-import',
       previewUrl: `media://${filePath}`,
       sourceUrl: `media://${filePath}`,
       resolution: { width: 3840, height: 2160 },
@@ -252,6 +261,7 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('settings:set-login-at-login', (_event, openAtLogin: boolean) => {
     app.setLoginItemSettings({ openAtLogin })
+    store.set('openAtLogin', openAtLogin)
     return true
   })
 
@@ -266,8 +276,13 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('shell:open-external', (_event, url: string) => {
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      shell.openExternal(url)
+    try {
+      const parsed = new URL(url)
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        shell.openExternal(parsed.href)
+      }
+    } catch {
+      console.warn('[shell:open-external] Rejected invalid URL:', url)
     }
   })
 
@@ -284,7 +299,7 @@ function registerIpcHandlers(): void {
     ) || displays[0]
 
     const assignment = getDisplayAssignment(String(matchingDisplay.id))
-    const wallpaper = assignment.wallpaperId ? getWallpaperById(assignment.wallpaperId) : getWallpaperById('local-v8')
+    const wallpaper = assignment.wallpaperId ? getWallpaperById(assignment.wallpaperId) : getWallpaperById(DEFAULT_WALLPAPER_ID)
 
     return {
       wallpaper,
@@ -302,11 +317,39 @@ app.on('before-quit', () => {
 app.whenReady().then(() => {
   setGalleryWindowGetter(() => galleryWindow)
 
+  // Build the set of allowed base directories for the media:// protocol
+  const allowedMediaBasePaths: string[] = [
+    getVantageWallpapersFolder(),
+    app.isPackaged ? process.resourcesPath : app.getAppPath(),
+    app.getPath('userData')
+  ]
+
+  function isPathAllowed(filePath: string): boolean {
+    const resolved = path.resolve(filePath).toLowerCase()
+    return allowedMediaBasePaths.some((base) => resolved.startsWith(path.resolve(base).toLowerCase()))
+  }
+
+  const MEDIA_MIME_TYPES: Record<string, string> = {
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+    '.mov': 'video/quicktime',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp'
+  }
+
   // Protocol handler for local file media streaming with full Range headers support
   protocol.handle('media', (request) => {
     try {
       const rawPath = request.url.replace(/^media:\/+/i, '/')
-      const filePath = decodeURIComponent(rawPath)
+      const filePath = path.resolve(decodeURIComponent(rawPath))
+
+      // C-2 FIX: Validate that the resolved path is under an allowed directory
+      if (!isPathAllowed(filePath)) {
+        console.warn('[MediaProtocol] Blocked access to path outside allowed directories:', filePath)
+        return new Response('Forbidden', { status: 403 })
+      }
 
       if (!fs.existsSync(filePath)) {
         console.warn('[MediaProtocol] File not found:', filePath)
@@ -316,16 +359,7 @@ app.whenReady().then(() => {
       const stat = fs.statSync(filePath)
       const fileSize = stat.size
       const ext = path.extname(filePath).toLowerCase()
-      const mimeTypes: Record<string, string> = {
-        '.mp4': 'video/mp4',
-        '.webm': 'video/webm',
-        '.mov': 'video/quicktime',
-        '.png': 'image/png',
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.webp': 'image/webp'
-      }
-      const contentType = mimeTypes[ext] || 'application/octet-stream'
+      const contentType = MEDIA_MIME_TYPES[ext] || 'application/octet-stream'
       const rangeHeader = request.headers.get('range')
 
       if (rangeHeader) {
@@ -344,7 +378,7 @@ app.whenReady().then(() => {
         const nodeStream = fs.createReadStream(filePath, { start, end })
         const webStream = Readable.toWeb(nodeStream)
 
-        return new Response(webStream as any, {
+        return new Response(webStream as ReadableStream, {
           status: 206,
           headers: {
             'Content-Range': `bytes ${start}-${end}/${fileSize}`,
@@ -358,7 +392,7 @@ app.whenReady().then(() => {
       const nodeStream = fs.createReadStream(filePath)
       const webStream = Readable.toWeb(nodeStream)
 
-      return new Response(webStream as any, {
+      return new Response(webStream as ReadableStream, {
         status: 200,
         headers: {
           'Content-Length': String(fileSize),

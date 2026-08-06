@@ -1,19 +1,5 @@
-export interface WallpaperItem {
-  id: string
-  title: string
-  category: string
-  type: string
-  previewUrl: string
-  sourceUrl: string
-  resolution: { width: number; height: number }
-  duration?: number
-  source: string
-  license: string
-  attribution?: string
-  colorPalette?: string[]
-  generatorId?: string
-  is_favorite?: boolean
-}
+import { WallpaperItem } from '../../shared/types'
+export type { WallpaperItem }
 
 export const INITIAL_WALLPAPERS: WallpaperItem[] = [
   {

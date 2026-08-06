@@ -14,7 +14,7 @@ export const VideoLayer: React.FC<VideoLayerProps> = ({ src, isPlaying, performa
     if (!video) return
 
     if (isPlaying && performanceMode !== 'pause') {
-      video.play().catch((err) => console.log('Video autoplay error:', err))
+      video.play().catch(() => { /* expected in some contexts */ })
     } else {
       video.pause()
     }
@@ -36,7 +36,6 @@ export const VideoLayer: React.FC<VideoLayerProps> = ({ src, isPlaying, performa
       <video
         ref={videoRef}
         src={src}
-        autoPlay
         loop
         muted
         playsInline

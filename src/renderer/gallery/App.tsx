@@ -5,6 +5,8 @@ import { Settings } from './screens/Settings'
 import { SourcesAndCredits } from './screens/SourcesAndCredits'
 import { ItemDetail } from './screens/ItemDetail'
 import { ApertureIrisIcon } from './components/ApertureIrisIcon'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import type { WallpaperItem, DisplayInfo, AppSettings, CacheStatus } from '../../shared/types'
 import {
   Compass,
   Film,
@@ -20,28 +22,27 @@ import {
   Heart,
   Settings as SettingsIcon,
   ShieldCheck,
-  PlusCircle,
-  Monitor
+  PlusCircle
 } from 'lucide-react'
 
 declare global {
   interface Window {
     galleryApi: {
-      getWallpapers: (category?: string, query?: string) => Promise<any[]>
+      getWallpapers: (category?: string, query?: string) => Promise<WallpaperItem[]>
       applyToDisplay: (displayId: number, wallpaperId: string) => Promise<boolean>
       toggleFavorite: (wallpaperId: string, isFavorite: boolean) => Promise<boolean>
-      getDisplays: () => Promise<any[]>
-      getSettings: () => Promise<any>
-      setSettings: (partial: any) => Promise<boolean>
+      getDisplays: () => Promise<DisplayInfo[]>
+      getSettings: () => Promise<AppSettings>
+      setSettings: (partial: Partial<AppSettings>) => Promise<boolean>
       setPerformanceMode: (displayId: number, mode: string) => Promise<boolean>
-      importFile: () => Promise<any>
+      importFile: () => Promise<WallpaperItem | null>
       openFolder: () => Promise<string>
       scanLocalFolder: () => Promise<number>
       clearCache: () => Promise<number>
-      getCacheStatus: () => Promise<{ usedBytes: number; limitBytes: number }>
+      getCacheStatus: () => Promise<CacheStatus>
       setLoginAtLogin: (openAtLogin: boolean) => Promise<boolean>
       openExternal: (url: string) => void
-      onDisplayChanged: (callback: (displays: any[]) => void) => () => void
+      onDisplayChanged: (callback: (displays: DisplayInfo[]) => void) => () => void
     }
   }
 }
@@ -89,6 +90,7 @@ export const App: React.FC = () => {
   ]
 
   return (
+    <ErrorBoundary>
     <div className="flex h-screen w-screen bg-void text-ink select-none overflow-hidden">
       {/* Sidebar Rail */}
       <aside className="w-56 bg-panel/70 border-r border-line flex flex-col justify-between px-3 pb-3 pt-8 select-none">
@@ -188,5 +190,6 @@ export const App: React.FC = () => {
         <ItemDetail item={selectedWallpaper} onClose={() => setSelectedWallpaper(null)} />
       )}
     </div>
+    </ErrorBoundary>
   )
 }

@@ -2,7 +2,8 @@ import Database from 'better-sqlite3'
 import { app } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
-import { INITIAL_WALLPAPERS, WallpaperItem } from './contentSources'
+import { INITIAL_WALLPAPERS } from './contentSources'
+import { WallpaperItem, DEFAULT_WALLPAPER_ID } from '../shared/types'
 
 let db: Database.Database | null = null
 
@@ -72,7 +73,7 @@ export function initDatabase(): Database.Database {
     const placeHolders = items.map(() => '?').join(',')
     const itemIds = items.map((i) => i.id)
     try {
-      db!.prepare(`UPDATE display_assignments SET wallpaper_id = 'local-v8' WHERE wallpaper_id IN (SELECT id FROM wallpapers WHERE source != 'user' AND id NOT LIKE 'user-%' AND id NOT IN (${placeHolders}))`).run(...itemIds)
+      db!.prepare(`UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (SELECT id FROM wallpapers WHERE source != 'user' AND id NOT LIKE 'user-%' AND id NOT IN (${placeHolders}))`).run(DEFAULT_WALLPAPER_ID, ...itemIds)
       db!.prepare(`DELETE FROM wallpapers WHERE source != 'user' AND id NOT LIKE 'user-%' AND id NOT IN (${placeHolders})`).run(...itemIds)
     } catch (err) {
       console.warn('[DB Sync] Warning during catalog cleanup:', err)
@@ -205,21 +206,22 @@ export function getDisplayAssignment(displayId: string): { wallpaperId: string |
   const database = initDatabase()
   const row = database.prepare('SELECT * FROM display_assignments WHERE display_id = ?').get(displayId) as any
   if (!row) {
-    return { wallpaperId: 'local-v8', performanceMode: 'balanced' }
+    return { wallpaperId: DEFAULT_WALLPAPER_ID, performanceMode: 'balanced' }
   }
   return {
-    wallpaperId: row.wallpaper_id,
+    wallpaperId: row.wallpaper_id || DEFAULT_WALLPAPER_ID,
     performanceMode: row.performance_mode || 'balanced'
   }
 }
 
 export function setPerformanceMode(displayId: string, mode: string): void {
   const database = initDatabase()
+  // Ensure a default wallpaper_id is set if this is a new row (avoids null FK)
   database.prepare(`
-    INSERT INTO display_assignments (display_id, performance_mode)
-    VALUES (?, ?)
+    INSERT INTO display_assignments (display_id, wallpaper_id, performance_mode)
+    VALUES (?, ?, ?)
     ON CONFLICT(display_id) DO UPDATE SET performance_mode = excluded.performance_mode
-  `).run(displayId, mode)
+  `).run(displayId, DEFAULT_WALLPAPER_ID, mode)
 }
 
 export function toggleFavoriteInDb(wallpaperId: string, isFavorite: boolean): void {

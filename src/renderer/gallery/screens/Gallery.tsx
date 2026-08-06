@@ -146,7 +146,7 @@ const WallpaperTile: React.FC<WallpaperTileProps> = ({ item, onSelect }) => {
           ) : (
             <img
               src={item.previewUrl || item.sourceUrl}
-              alt=""
+              alt={item.title}
               onError={() => setHasImageError(true)}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
@@ -156,7 +156,7 @@ const WallpaperTile: React.FC<WallpaperTileProps> = ({ item, onSelect }) => {
         ) : (
           <img
             src={item.previewUrl || item.sourceUrl}
-            alt=""
+            alt={item.title}
             onError={() => setHasImageError(true)}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />

@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from 'react'
 import { useGalleryStore } from '../store/useGalleryStore'
-import { Zap, HardDrive, Key, RefreshCw, AppWindow, Sliders } from 'lucide-react'
+import type { AppSettings, CacheStatus } from '../../../shared/types'
+import { Zap, HardDrive, Key, RefreshCw, AppWindow } from 'lucide-react'
 
 export const Settings: React.FC = () => {
   const { displays, fetchDisplays } = useGalleryStore()
-  const [settings, setSettingsState] = useState<any>({
+  const [settings, setSettingsState] = useState<AppSettings>({
     openAtLogin: true,
     showInDock: false,
+    showOnLockScreen: true,
     pexelsApiKey: '',
     unsplashApiKey: '',
-    maxCacheSizeGb: 5
+    maxCacheSizeGb: 5,
+    theme: 'dark'
   })
   const [clearedBytes, setClearedBytes] = useState<number | null>(null)
 
-  const [cacheStatus, setCacheStatus] = useState<{ usedBytes: number; limitBytes: number } | null>(null)
+  const [cacheStatus, setCacheStatus] = useState<CacheStatus | null>(null)
 
   useEffect(() => {
     if (window.galleryApi) {
@@ -33,12 +36,12 @@ export const Settings: React.FC = () => {
     }
   }
 
-  const handleSaveSettings = async (partial: any) => {
+  const handleSaveSettings = async (partial: Partial<AppSettings>) => {
     const updated = { ...settings, ...partial }
     setSettingsState(updated)
     if (window.galleryApi) {
       if ('openAtLogin' in partial) {
-        await window.galleryApi.setLoginAtLogin(partial.openAtLogin)
+        await window.galleryApi.setLoginAtLogin(Boolean(partial.openAtLogin))
       }
       await window.galleryApi.setSettings(partial)
     }
@@ -54,7 +57,7 @@ export const Settings: React.FC = () => {
   }
 
   return (
-    <div className="p-6 pt-8 max-w-4xl mx-auto space-y-8 animate-fade-in">
+    <div className="p-6 pt-8 max-w-4xl mx-auto space-y-8 animate-fade-in overflow-y-auto h-full">
       <div className="[-webkit-app-region:drag]">
         <h1 className="text-2xl font-bold text-ink mb-1">Preferences & System Settings</h1>
         <p className="text-sm text-ink-dim">
@@ -167,6 +170,44 @@ export const Settings: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* API Keys */}
+      <section className="bg-panel border border-line rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2 text-glow font-mono text-xs uppercase tracking-wider">
+          <Key className="w-4 h-4" />
+          <span>Content Source API Keys</span>
+        </div>
+
+        <div className="space-y-3">
+          <div className="p-3 bg-void border border-line rounded-lg space-y-2">
+            <div className="text-sm font-semibold text-ink">Pexels API Key</div>
+            <div className="text-xs text-ink-dim">
+              Optional. Provide your own Pexels API key to enable curated photo wallpapers.
+            </div>
+            <input
+              type="text"
+              value={settings.pexelsApiKey}
+              onChange={(e) => handleSaveSettings({ pexelsApiKey: e.target.value })}
+              placeholder="Enter Pexels API key..."
+              className="w-full bg-panel border border-line rounded-lg px-3 py-1.5 text-xs text-ink placeholder-ink-dim focus:outline-none focus:border-glow/50 font-mono"
+            />
+          </div>
+
+          <div className="p-3 bg-void border border-line rounded-lg space-y-2">
+            <div className="text-sm font-semibold text-ink">Unsplash API Key</div>
+            <div className="text-xs text-ink-dim">
+              Optional. Provide your own Unsplash API key to enable curated photography wallpapers.
+            </div>
+            <input
+              type="text"
+              value={settings.unsplashApiKey}
+              onChange={(e) => handleSaveSettings({ unsplashApiKey: e.target.value })}
+              placeholder="Enter Unsplash API key..."
+              className="w-full bg-panel border border-line rounded-lg px-3 py-1.5 text-xs text-ink placeholder-ink-dim focus:outline-none focus:border-glow/50 font-mono"
+            />
+          </div>
         </div>
       </section>
 

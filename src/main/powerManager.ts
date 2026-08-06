@@ -2,9 +2,7 @@ import { powerMonitor, screen } from 'electron'
 import { setGlobalPlaybackState, setPerformanceModeForDisplay, setLockScreenMode } from './wallpaperWindow'
 import { getDisplayAssignment } from './db'
 import { refreshTrayMenu } from './tray'
-import Store from 'electron-store'
-
-const store = new Store()
+import store from './store'
 
 export function initPowerManager(): void {
   powerMonitor.on('lock-screen', () => {

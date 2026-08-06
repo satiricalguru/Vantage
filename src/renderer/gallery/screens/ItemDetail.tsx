@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useGalleryStore, WallpaperItem } from '../store/useGalleryStore'
 import { ApertureIrisIcon } from '../components/ApertureIrisIcon'
 import { X, Heart, Monitor, Check, ExternalLink } from 'lucide-react'
@@ -11,9 +11,20 @@ interface ItemDetailProps {
 export const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
   const { displays, applyWallpaper, toggleFavorite } = useGalleryStore()
 
+  // M-9 FIX: Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in">
-      <div className="bg-panel border border-line rounded-xl max-w-3xl w-full overflow-hidden shadow-2xl flex flex-col md:flex-row">
+    <div
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >      <div className="bg-panel border border-line rounded-xl max-w-3xl w-full overflow-hidden shadow-2xl flex flex-col md:flex-row">
         {/* Preview media pane */}
         <div className="w-full md:w-1/2 bg-black relative flex items-center justify-center min-h-[300px]">
           {item.type === 'video' ? (
