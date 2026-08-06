@@ -1,17 +1,27 @@
 import { powerMonitor, screen } from 'electron'
-import { setGlobalPlaybackState, setPerformanceModeForDisplay } from './wallpaperWindow'
+import { setGlobalPlaybackState, setPerformanceModeForDisplay, setLockScreenMode } from './wallpaperWindow'
 import { getDisplayAssignment } from './db'
 import { refreshTrayMenu } from './tray'
+import Store from 'electron-store'
+
+const store = new Store()
 
 export function initPowerManager(): void {
   powerMonitor.on('lock-screen', () => {
-    console.log('[PowerManager] Screen locked. Pausing wallpapers.')
-    setGlobalPlaybackState(false)
+    const showOnLockScreen = store.get('showOnLockScreen', true)
+    console.log(`[PowerManager] Screen locked. showOnLockScreen: ${showOnLockScreen}`)
+    if (showOnLockScreen) {
+      setLockScreenMode(true)
+      setGlobalPlaybackState(true)
+    } else {
+      setGlobalPlaybackState(false)
+    }
     refreshTrayMenu()
   })
 
   powerMonitor.on('unlock-screen', () => {
-    console.log('[PowerManager] Screen unlocked. Resuming wallpapers.')
+    console.log('[PowerManager] Screen unlocked. Restoring normal desktop wallpaper mode.')
+    setLockScreenMode(false)
     setGlobalPlaybackState(true)
     refreshTrayMenu()
   })

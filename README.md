@@ -40,10 +40,16 @@ Whether you want crisp 4K 60fps video loops, interactive particle physics, AI-ge
 - **Custom `media://` Protocol**: Bypasses browser memory limits by implementing custom HTTP 206 Partial Content (Range Request) streaming directly from disk.
 - **4K/60FPS Smooth Playback**: Plays heavy H.264/HEVC videos and WebM loops with near-zero memory footprint and smooth hardware acceleration.
 
+### 🔒 Lock Screen Live Wallpaper Support
+- **Seamless macOS Lock Screen Overlay**: Automatically elevates live video and AI wallpapers to the macOS screen saver window level (`kCGScreenSaverWindowLevel` / `'screen-saver'`) when your Mac is locked.
+- **Continuous Playback**: Live wallpapers continue playing smoothly behind your Lock Screen authentication interface.
+- **Toggle Control**: Enable or disable Lock Screen wallpaper rendering anytime from the Preferences panel.
+
 ### 🔋 Battery & Energy Saver Intelligence
 - **Automatic Battery Pause**: Automatically freezes video playback and canvas animations when running on battery power to conserve battery.
 - **Low Power Mode Support**: Integrates with macOS system low-power mode to minimize background GPU usage.
 - **Fullscreen App Awareness**: Automatically suspends wallpaper rendering whenever a fullscreen application or game is active.
+
 
 ### 🌌 AI & Generative Live Canvas
 - **Generative Particle Engine**: Real-time customizable particle systems with dynamic light fields and interactive cursor responses.

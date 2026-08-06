@@ -102,6 +102,21 @@ export const Settings: React.FC = () => {
 
           <div className="flex items-center justify-between p-3 bg-void border border-line rounded-lg">
             <div>
+              <div className="text-sm font-semibold text-ink">Show on macOS Lock Screen</div>
+              <div className="text-xs text-ink-dim">
+                Keep live video and generative wallpapers active on the macOS Lock Screen when system is locked.
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings.showOnLockScreen ?? true}
+              onChange={(e) => handleSaveSettings({ showOnLockScreen: e.target.checked })}
+              className="w-4 h-4 accent-glow cursor-pointer"
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-3 bg-void border border-line rounded-lg">
+            <div>
               <div className="text-sm font-semibold text-ink">Close to Background</div>
               <div className="text-xs text-ink-dim">
                 Clicking the red close button (X) hides the gallery to the background while wallpapers keep playing.
@@ -113,6 +128,7 @@ export const Settings: React.FC = () => {
           </div>
         </div>
       </section>
+
 
       {/* Performance & Energy Modes */}
       <section className="bg-panel border border-line rounded-xl p-5 space-y-4">

@@ -132,6 +132,28 @@ export function getGlobalPlaybackState(): boolean {
   return isGlobalPlaying
 }
 
+export function setLockScreenMode(isLocked: boolean): void {
+  for (const win of wallpaperWindows.values()) {
+    if (win.isDestroyed()) continue
+    if (isLocked) {
+      win.setAlwaysOnTop(true, 'screen-saver')
+      win.setVisibleOnAllWorkspaces(true, {
+        visibleOnFullScreen: true,
+        skipTransformProcessType: true
+      })
+      win.showInactive()
+    } else {
+      win.setAlwaysOnTop(false)
+      win.setVisibleOnAllWorkspaces(true, {
+        visibleOnFullScreen: true,
+        skipTransformProcessType: true
+      })
+      win.showInactive()
+    }
+  }
+}
+
+
 export function getWallpaperWindow(displayId: number): BrowserWindow | undefined {
   return wallpaperWindows.get(displayId)
 }

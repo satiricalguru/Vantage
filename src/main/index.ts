@@ -174,12 +174,14 @@ function registerIpcHandlers(): void {
     return {
       openAtLogin: app.getLoginItemSettings().openAtLogin,
       showInDock: store.get('showInDock', false),
+      showOnLockScreen: store.get('showOnLockScreen', true),
       pexelsApiKey: store.get('pexelsApiKey', ''),
       unsplashApiKey: store.get('unsplashApiKey', ''),
       maxCacheSizeGb: store.get('maxCacheSizeGb', 5),
       theme: store.get('theme', 'dark')
     }
   })
+
 
   ipcMain.handle('settings:set', (_event, partial) => {
     for (const [key, val] of Object.entries(partial)) {
