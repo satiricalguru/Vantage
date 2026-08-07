@@ -19,6 +19,7 @@ import {
   Palette,
   FolderDown,
   Heart,
+  Image as ImageIcon,
   Settings as SettingsIcon,
   ShieldCheck,
   PlusCircle,
@@ -94,6 +95,7 @@ export const App: React.FC = () => {
     { id: 'space', label: 'Space & NASA', icon: Rocket },
     { id: 'generative', label: 'Generative Canvas', icon: Sparkles },
     { id: 'ai-art', label: 'AI Art Pipeline', icon: Palette },
+    { id: 'static', label: 'Static Wallpapers', icon: ImageIcon },
     { id: 'imported', label: 'My Imports', icon: FolderDown },
     { id: 'favorites', label: 'Favorites', icon: Heart }
   ]

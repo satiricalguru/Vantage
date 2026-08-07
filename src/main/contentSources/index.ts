@@ -4,19 +4,51 @@ export type { WallpaperItem }
 export const INITIAL_WALLPAPERS: WallpaperItem[] = [
   {
     "id": DEFAULT_WALLPAPER_ID,
-    "title": "Aurora Gradient Canvas",
-    "category": "generative",
-    "type": "generative",
-    "previewUrl": "",
-    "sourceUrl": "",
+    "title": "V8 - Anime",
+    "category": "anime",
+    "type": "video",
+    "previewUrl": "resources/thumbnails/wallpaperx-v8.jpg",
+    "sourceUrl": "extracted/v8.mp4",
     "resolution": {
-      "width": 3840,
-      "height": 2160
+      "width": 2560,
+      "height": 1440
     },
+    "duration": 31,
     "source": "local",
-    "license": "In-House Procedural Generator",
-    "attribution": "Vantage Built-in",
-    "generatorId": "aurora"
+    "license": "Wallpaper X Extracted Collection",
+    "attribution": "Extracted from Wallpaper X (user-owned)"
+  },
+  {
+    "id": "wallpaperx-v295",
+    "title": "V295 - Anime",
+    "category": "anime",
+    "type": "video",
+    "previewUrl": "resources/thumbnails/wallpaperx-v295.jpg",
+    "sourceUrl": "extracted/v295.mp4",
+    "resolution": {
+      "width": 1920,
+      "height": 1080
+    },
+    "duration": 130,
+    "source": "local",
+    "license": "Wallpaper X Extracted Collection",
+    "attribution": "Extracted from Wallpaper X (user-owned)"
+  },
+  {
+    "id": "wallpaperx-v233",
+    "title": "V233 - Generative Canvas",
+    "category": "generative",
+    "type": "video",
+    "previewUrl": "resources/thumbnails/wallpaperx-v233.jpg",
+    "sourceUrl": "extracted/v233.mp4",
+    "resolution": {
+      "width": 1920,
+      "height": 1080
+    },
+    "duration": 5,
+    "source": "local",
+    "license": "Wallpaper X Extracted Collection",
+    "attribution": "Extracted from Wallpaper X (user-owned)"
   },
   {
     "id": "motionbgs-celestial-veil",

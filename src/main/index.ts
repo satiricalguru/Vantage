@@ -8,6 +8,7 @@ import { createTray } from './tray'
 import { initPowerManager } from './powerManager'
 import { searchRemoteWallpapers } from './remoteSources'
 import { ensureCached, getCacheStatus, clearCache, evictToLimit, setCacheLimitBytes, getCacheDir, isRemoteHttpUrl, onCacheProgress, getCacheLimitBytes } from './videoCache'
+import { syncStaticWallpapers, getStaticSourceDirs } from './staticLibrary'
 import store from './store'
 import { ALLOWED_SETTINGS_KEYS, DEFAULT_WALLPAPER_ID, WallpaperItem } from '../shared/types'
 
@@ -63,6 +64,43 @@ function getVantageWallpapersFolder(): string {
   return targetDir
 }
 
+function watchVantageWallpapersFolder(): void {
+  const targetDir = getVantageWallpapersFolder()
+  try {
+    fs.watch(targetDir, (_eventType, filename) => {
+      if (!filename) return
+      if (scanTimer) clearTimeout(scanTimer)
+      scanTimer = setTimeout(() => {
+        scanVantageWallpapersFolder()
+        notifyCatalogChanged()
+      }, 500)
+    })
+    console.log('[FolderScanner] Watching:', targetDir)
+  } catch (err) {
+    console.error('[FolderScanner] Failed to watch folder:', err)
+  }
+}
+
+function watchStaticLibrary(): void {
+  const staticDirs = getStaticSourceDirs()
+  let staticTimer: ReturnType<typeof setTimeout> | null = null
+  for (const dir of staticDirs) {
+    try {
+      fs.watch(dir, (_eventType, filename) => {
+        if (!filename) return
+        if (staticTimer) clearTimeout(staticTimer)
+        staticTimer = setTimeout(() => {
+          syncStaticWallpapers()
+          notifyCatalogChanged()
+        }, 500)
+      })
+      console.log('[StaticLibrary] Watching:', dir)
+    } catch (err) {
+      console.error('[StaticLibrary] Failed to watch folder:', dir, err)
+    }
+  }
+}
+
 function scanVantageWallpapersFolder(): number {
   const targetDir = getVantageWallpapersFolder()
   let addedCount = 0
@@ -102,23 +140,6 @@ function scanVantageWallpapersFolder(): number {
 }
 
 let scanTimer: ReturnType<typeof setTimeout> | null = null
-
-function watchVantageWallpapersFolder(): void {
-  const targetDir = getVantageWallpapersFolder()
-  try {
-    fs.watch(targetDir, (_eventType, filename) => {
-      if (!filename) return
-      if (scanTimer) clearTimeout(scanTimer)
-      scanTimer = setTimeout(() => {
-        scanVantageWallpapersFolder()
-        notifyCatalogChanged()
-      }, 500)
-    })
-    console.log('[FolderScanner] Watching:', targetDir)
-  } catch (err) {
-    console.error('[FolderScanner] Failed to watch folder:', err)
-  }
-}
 
 function notifyCatalogChanged(): void {
   if (galleryWindow && !galleryWindow.isDestroyed()) {
@@ -455,7 +476,8 @@ app.whenReady().then(() => {
     getVantageWallpapersFolder(),
     app.isPackaged ? process.resourcesPath : app.getAppPath(),
     app.getPath('userData'),
-    getCacheDir()
+    getCacheDir(),
+    ...getStaticSourceDirs()
   ]
 
   function isPathAllowed(filePath: string): boolean {
@@ -574,6 +596,11 @@ app.whenReady().then(() => {
   initDatabase()
   scanVantageWallpapersFolder()
   watchVantageWallpapersFolder()
+  const staticAdded = syncStaticWallpapers()
+  if (staticAdded > 0) {
+    console.log(`[StaticLibrary] Registered ${staticAdded} static wallpapers`)
+  }
+  watchStaticLibrary()
   setupDisplayListeners()
   syncWallpaperWindows()
   initPowerManager()

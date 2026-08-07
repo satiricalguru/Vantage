@@ -74,8 +74,8 @@ export function initDatabase(): Database.Database {
     const placeHolders = items.map(() => '?').join(',')
     const itemIds = items.map((i) => i.id)
     try {
-      db!.prepare(`UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (SELECT id FROM wallpapers WHERE source != 'user' AND id NOT LIKE 'user-%' AND id NOT LIKE 'pexels-%' AND id NOT LIKE 'unsplash-%' AND id NOT IN (${placeHolders}))`).run(DEFAULT_WALLPAPER_ID, ...itemIds)
-      db!.prepare(`DELETE FROM wallpapers WHERE source != 'user' AND id NOT LIKE 'user-%' AND id NOT LIKE 'pexels-%' AND id NOT LIKE 'unsplash-%' AND id NOT IN (${placeHolders})`).run(...itemIds)
+      db!.prepare(`UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (SELECT id FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT LIKE 'pexels-%' AND id NOT LIKE 'unsplash-%' AND id NOT IN (${placeHolders}))`).run(DEFAULT_WALLPAPER_ID, ...itemIds)
+      db!.prepare(`DELETE FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT LIKE 'pexels-%' AND id NOT LIKE 'unsplash-%' AND id NOT IN (${placeHolders})`).run(...itemIds)
     } catch (err) {
       console.warn('[DB Sync] Warning during catalog cleanup:', err)
     }
@@ -116,6 +116,11 @@ function resolveMediaUrl(url: string | undefined | null): string {
     const fullPath = path.join(baseDir, url)
     return `media://${fullPath}`
   }
+  if (url.startsWith('extracted/')) {
+    const baseDir = app.isPackaged ? process.resourcesPath : app.getAppPath()
+    const fullPath = path.join(baseDir, 'Extracted_Video_Wallpapers', url.slice('extracted/'.length))
+    return `media://${fullPath}`
+  }
   return url
 }
 
@@ -125,7 +130,9 @@ export function getAllWallpapers(category?: string, query?: string): WallpaperIt
   const params: any[] = []
   const conditions: string[] = []
 
-  if (category && category !== 'all' && category !== 'favorites' && category !== 'videos') {
+  if (category === 'static') {
+    conditions.push("source = 'static'")
+  } else if (category && category !== 'all' && category !== 'favorites' && category !== 'videos') {
     conditions.push('category = ?')
     params.push(category)
   } else if (category === 'favorites') {
@@ -133,6 +140,11 @@ export function getAllWallpapers(category?: string, query?: string): WallpaperIt
   } else if (category === 'videos') {
     conditions.push('type = ?')
     params.push('video')
+  }
+
+  if (!category || category === 'all') {
+    // Static wallpapers are only exposed via the dedicated Static Wallpapers tab
+    conditions.push("source != 'static'")
   }
 
   if (query && query.trim() !== '') {
@@ -274,5 +286,22 @@ export function pruneUserFolderEntries(keptIds: string[]): void {
     }
   } catch (err) {
     console.warn('[DB] Error pruning removed folder entries:', err)
+  }
+}
+
+/** Remove static-catalog entries whose source file no longer exists */
+export function pruneStaticWallpapers(keptIds: string[]): void {
+  const database = initDatabase()
+  const placeHolders = keptIds.map(() => '?').join(',')
+  try {
+    if (keptIds.length > 0) {
+      database.prepare(
+        `DELETE FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%' AND id NOT IN (${placeHolders})`
+      ).run(...keptIds)
+    } else {
+      database.prepare(`DELETE FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%'`).run()
+    }
+  } catch (err) {
+    console.warn('[DB] Error pruning removed static entries:', err)
   }
 }

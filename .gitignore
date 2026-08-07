@@ -18,6 +18,11 @@ build/
 .LSOverride
 
 # Temp / extracted asset directories
+#
+# !! DO NOT DELETE — user-owned assets, reverse-engineered from Wallpaper X.
+#    Contains the user's favorite wallpaper V8.mp4 and 1066 catalog papers
+#    (Extracted_Video_Wallpapers/{V8.mp4,V233.mp4,V295.mp4,Papers/}).
+#    Recovered 2026-08-06 after an accidental rm. See ARCHITECTURAL_ANALYSIS.md.
 Extracted_Video_Wallpapers/
 extracted_wallpapers/
 test_naruto.jpg

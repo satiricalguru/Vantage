@@ -43,7 +43,7 @@ export interface CacheStatus {
 }
 
 /** The default wallpaper ID used when no assignment exists */
-export const DEFAULT_WALLPAPER_ID = 'local-v8'
+export const DEFAULT_WALLPAPER_ID = 'wallpaperx-v8'
 
 /** Settings keys that the renderer is allowed to write via IPC */
 export const ALLOWED_SETTINGS_KEYS: ReadonlySet<string> = new Set([
