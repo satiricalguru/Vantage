@@ -21,6 +21,9 @@ export const GenerativeLayer: React.FC<GenerativeLayerProps> = ({
 
     let animationFrameId: number
     let time = 0
+    let lastFrameAt = 0
+    const frameInterval =
+      performanceMode === 'quality' ? 1000 / 60 : performanceMode === 'battery-saver' ? 1000 / 15 : 1000 / 30
 
     const resize = () => {
       canvas.width = window.innerWidth
@@ -38,10 +41,15 @@ export const GenerativeLayer: React.FC<GenerativeLayerProps> = ({
       size: Math.random() * 2 + 1
     }))
 
-    const render = () => {
+    const render = (timestamp: number) => {
       if (!isPlaying || performanceMode === 'pause') return
+      if (timestamp - lastFrameAt < frameInterval) {
+        animationFrameId = requestAnimationFrame(render)
+        return
+      }
+      lastFrameAt = timestamp
 
-      time += performanceMode === 'battery-saver' ? 0.005 : 0.015
+      time += frameInterval / 1000
       const width = canvas.width
       const height = canvas.height
 
@@ -123,7 +131,7 @@ export const GenerativeLayer: React.FC<GenerativeLayerProps> = ({
       animationFrameId = requestAnimationFrame(render)
     }
 
-    render()
+    animationFrameId = requestAnimationFrame(render)
 
     return () => {
       cancelAnimationFrame(animationFrameId)

@@ -34,6 +34,7 @@ export function createWallpaperWindow(display: Display): BrowserWindow {
       preload: path.join(__dirname, '../preload/wallpaper.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
       backgroundThrottling: false
     }
   })
@@ -123,7 +124,7 @@ export function applyWallpaperToDisplay(displayId: number, wallpaperId: string):
 
 export function setPerformanceModeForDisplay(displayId: number, mode: string): void {
   const win = wallpaperWindows.get(displayId)
-  if (win) {
+  if (win && !win.isDestroyed()) {
     win.webContents.send('performance:mode-changed', mode)
   }
 }
@@ -131,7 +132,7 @@ export function setPerformanceModeForDisplay(displayId: number, mode: string): v
 export function setGlobalPlaybackState(isPlaying: boolean): void {
   isGlobalPlaying = isPlaying
   for (const win of wallpaperWindows.values()) {
-    win.webContents.send('playback:state-changed', isPlaying)
+    if (!win.isDestroyed()) win.webContents.send('playback:state-changed', isPlaying)
   }
 }
 

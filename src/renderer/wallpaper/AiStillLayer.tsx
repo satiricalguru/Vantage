@@ -17,6 +17,9 @@ export const AiStillLayer: React.FC<AiStillLayerProps> = ({ src, isPlaying, perf
 
     let animId: number
     let time = 0
+    let lastFrameAt = 0
+    const frameInterval =
+      performanceMode === 'quality' ? 1000 / 60 : performanceMode === 'battery-saver' ? 1000 / 15 : 1000 / 30
 
     const resize = () => {
       canvas.width = window.innerWidth
@@ -33,10 +36,15 @@ export const AiStillLayer: React.FC<AiStillLayerProps> = ({ src, isPlaying, perf
       speed: Math.random() * 0.4 + 0.1
     }))
 
-    const render = () => {
+    const render = (timestamp: number) => {
       if (!isPlaying || performanceMode === 'pause') return
+      if (timestamp - lastFrameAt < frameInterval) {
+        animId = requestAnimationFrame(render)
+        return
+      }
+      lastFrameAt = timestamp
 
-      time += 0.01
+      time += frameInterval / 1000
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       for (const p of particles) {
@@ -52,7 +60,7 @@ export const AiStillLayer: React.FC<AiStillLayerProps> = ({ src, isPlaying, perf
       animId = requestAnimationFrame(render)
     }
 
-    render()
+    animId = requestAnimationFrame(render)
 
     return () => {
       cancelAnimationFrame(animId)
@@ -65,7 +73,9 @@ export const AiStillLayer: React.FC<AiStillLayerProps> = ({ src, isPlaying, perf
       <img
         src={src}
         alt="Animated Still Wallpaper"
-        className="w-full h-full object-cover transition-transform duration-[20000ms] ease-in-out scale-105 hover:scale-110 animate-pulse"
+        className={`w-full h-full object-cover transition-transform duration-[20000ms] ease-in-out scale-105 hover:scale-110 ${
+          isPlaying && performanceMode !== 'pause' ? 'animate-pulse' : ''
+        }`}
         style={{
           animationDuration: '12s'
         }}

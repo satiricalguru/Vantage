@@ -7,10 +7,11 @@ import { syncWallpaperWindows, applyWallpaperToDisplay, setPerformanceModeForDis
 import { createTray } from './tray'
 import { initPowerManager } from './powerManager'
 import { searchRemoteWallpapers } from './remoteSources'
-import { ensureCached, getCacheStatus, clearCache, evictToLimit, setCacheLimitBytes, getCacheDir, isRemoteHttpUrl, onCacheProgress, getCacheLimitBytes } from './videoCache'
+import { ensureCached, getCacheStatus, clearCache, evictToLimit, setCacheLimitBytes, getCacheDir, isAllowedRemoteMediaUrl, onCacheProgress, getCacheLimitBytes, CACHE_FLOOR_BYTES, CACHE_CEILING_BYTES } from './videoCache'
 import { syncStaticWallpapers, getStaticSourceDirs } from './staticLibrary'
 import store from './store'
 import { ALLOWED_SETTINGS_KEYS, DEFAULT_WALLPAPER_ID, WallpaperItem } from '../shared/types'
+import { toMediaUrl } from './mediaUrl'
 
 // Register media:// custom protocol for local video & asset streaming
 protocol.registerSchemesAsPrivileged([
@@ -20,7 +21,6 @@ protocol.registerSchemesAsPrivileged([
       secure: true,
       supportFetchAPI: true,
       standard: true,
-      bypassCSP: true,
       stream: true
     }
   }
@@ -28,17 +28,6 @@ protocol.registerSchemesAsPrivileged([
 
 // store is now imported from ./store (single shared instance)
 const ENCRYPTED_PREFIX = 'enc:v1:'
-
-function encryptSecret(value: string): string {
-  if (value && safeStorage.isEncryptionAvailable()) {
-    try {
-      return ENCRYPTED_PREFIX + safeStorage.encryptString(value).toString('base64')
-    } catch (err) {
-      console.warn('[Settings] safeStorage encryption failed; storing plaintext:', err)
-    }
-  }
-  return value
-}
 
 function decryptSecret(value: string): string {
   if (!value.startsWith(ENCRYPTED_PREFIX)) return value
@@ -112,6 +101,13 @@ function scanVantageWallpapersFolder(): number {
       const ext = path.extname(file).toLowerCase()
       if (['.mp4', '.mov', '.webm', '.png', '.jpg', '.jpeg', '.webp'].includes(ext)) {
         const filePath = path.join(targetDir, file)
+        let stat: fs.Stats
+        try {
+          stat = fs.statSync(filePath)
+        } catch {
+          continue
+        }
+        if (!stat.isFile()) continue
         const isVideo = ['.mp4', '.mov', '.webm'].includes(ext)
         const id = `user-folder-${file.replace(/[^a-zA-Z0-9_-]/g, '_')}`
         presentIds.push(id)
@@ -120,8 +116,8 @@ function scanVantageWallpapersFolder(): number {
           title: file.replace(/\.[^/.]+$/, ''),
           category: 'imported' as const,
           type: isVideo ? 'video' : 'user-import',
-          previewUrl: `media://${filePath}`,
-          sourceUrl: `media://${filePath}`,
+          previewUrl: toMediaUrl(filePath),
+          sourceUrl: toMediaUrl(filePath),
           resolution: { width: 3840, height: 2160 },
           source: 'user' as const,
           license: 'Local Folder Import',
@@ -176,6 +172,39 @@ function forwardRendererLogs(win: BrowserWindow): void {
   })
 }
 
+const VALID_PERFORMANCE_MODES = new Set(['quality', 'balanced', 'battery-saver'])
+const VALID_IMPORT_EXTENSIONS = new Set(['.mp4', '.mov', '.webm', '.png', '.jpg', '.jpeg', '.webp'])
+
+function isTrustedIpcSender(event: Electron.IpcMainInvokeEvent): boolean {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (!win || win.isDestroyed()) return false
+
+  const url = event.sender.getURL()
+  if (url.startsWith('file://')) return true
+
+  const rendererUrl = process.env['ELECTRON_RENDERER_URL']
+  if (!rendererUrl) return false
+  try {
+    return new URL(url).origin === new URL(rendererUrl).origin
+  } catch {
+    return false
+  }
+}
+
+function requireTrustedIpcSender(event: Electron.IpcMainInvokeEvent): void {
+  if (!isTrustedIpcSender(event)) {
+    throw new Error('IPC request rejected from an untrusted renderer')
+  }
+}
+
+function isKnownDisplay(displayId: unknown): displayId is number {
+  return (
+    typeof displayId === 'number' &&
+    Number.isSafeInteger(displayId) &&
+    screen.getAllDisplays().some((display) => display.id === displayId)
+  )
+}
+
 // Single instance lock to catch app relaunch attempts
 const gotTheLock = app.requestSingleInstanceLock()
 
@@ -216,7 +245,8 @@ function createGalleryWindow(): BrowserWindow {
     webPreferences: {
       preload: path.join(__dirname, '../preload/gallery.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      sandbox: true
     }
   })
 
@@ -248,7 +278,12 @@ function createGalleryWindow(): BrowserWindow {
 }
 
 function registerIpcHandlers(): void {
-  ipcMain.handle('wallpaper:list', async (_event, { category, query }) => {
+  ipcMain.handle('wallpaper:list', async (event, payload) => {
+    requireTrustedIpcSender(event)
+    const { category, query } = payload && typeof payload === 'object' ? payload : {}
+    if (category !== undefined && typeof category !== 'string') throw new Error('Invalid wallpaper category')
+    if (query !== undefined && typeof query !== 'string') throw new Error('Invalid wallpaper query')
+    if (typeof query === 'string' && query.length > 200) throw new Error('Wallpaper query is too long')
     if (category === 'pexels' || category === 'unsplash') {
       const result = await handleRemoteSearch(category, query || '')
       return result.items
@@ -256,18 +291,31 @@ function registerIpcHandlers(): void {
     return getAllWallpapers(category, query)
   })
 
-  ipcMain.handle('wallpaper:apply-to-display', (_event, { displayId, wallpaperId }) => {
+  ipcMain.handle('wallpaper:apply-to-display', (event, payload) => {
+    requireTrustedIpcSender(event)
+    const { displayId, wallpaperId } = payload && typeof payload === 'object' ? payload : {}
+    if (!isKnownDisplay(displayId) || typeof wallpaperId !== 'string') {
+      throw new Error('Invalid display or wallpaper ID')
+    }
+    if (!getWallpaperById(wallpaperId)) throw new Error('Wallpaper does not exist')
     setDisplayAssignment(String(displayId), wallpaperId)
     applyWallpaperToDisplay(displayId, wallpaperId)
     return true
   })
 
-  ipcMain.handle('wallpaper:favorite', (_event, { wallpaperId, isFavorite }) => {
+  ipcMain.handle('wallpaper:favorite', (event, payload) => {
+    requireTrustedIpcSender(event)
+    const { wallpaperId, isFavorite } = payload && typeof payload === 'object' ? payload : {}
+    if (typeof wallpaperId !== 'string' || typeof isFavorite !== 'boolean') {
+      throw new Error('Invalid favorite request')
+    }
+    if (!getWallpaperById(wallpaperId)) throw new Error('Wallpaper does not exist')
     toggleFavoriteInDb(wallpaperId, isFavorite)
     return true
   })
 
-  ipcMain.handle('display:list', () => {
+  ipcMain.handle('display:list', (event) => {
+    requireTrustedIpcSender(event)
     return screen.getAllDisplays().map((d) => {
       const assignment = getDisplayAssignment(String(d.id))
       return {
@@ -281,47 +329,61 @@ function registerIpcHandlers(): void {
     })
   })
 
-  ipcMain.handle('settings:get', () => {
+  ipcMain.handle('settings:get', (event) => {
+    requireTrustedIpcSender(event)
     return {
       openAtLogin: app.getLoginItemSettings().openAtLogin,
       showInDock: store.get('showInDock', false),
       showOnLockScreen: store.get('showOnLockScreen', true),
-      pexelsApiKey: decryptSecret(String(store.get('pexelsApiKey', ''))),
-      unsplashApiKey: decryptSecret(String(store.get('unsplashApiKey', ''))),
       maxCacheSizeGb: store.get('maxCacheSizeGb', 5),
       theme: store.get('theme', 'dark')
     }
   })
 
 
-  ipcMain.handle('settings:set', (_event, partial: Record<string, unknown>) => {
+  ipcMain.handle('settings:set', (event, partial: Record<string, unknown>) => {
+    requireTrustedIpcSender(event)
+    if (!partial || typeof partial !== 'object' || Array.isArray(partial)) {
+      throw new Error('Invalid settings payload')
+    }
+
+    const validated: Record<string, unknown> = {}
     // Only allow whitelisted settings keys to be written
     for (const [key, val] of Object.entries(partial)) {
       if (!ALLOWED_SETTINGS_KEYS.has(key)) {
-        console.warn(`[Settings] Rejected write to disallowed key: "${key}"`)
-        continue
+        throw new Error(`Setting is not writable: ${key}`)
       }
-      if (key === 'pexelsApiKey' || key === 'unsplashApiKey') {
-        store.set(key, encryptSecret(String(val)))
-        continue
+      if (['showInDock', 'showOnLockScreen', 'openAtLogin'].includes(key) && typeof val !== 'boolean') {
+        throw new Error(`Setting ${key} must be boolean`)
       }
+      if (key === 'theme' && val !== 'dark') throw new Error('Unsupported theme')
+      if (key === 'maxCacheSizeGb') {
+        const gb = Number(val)
+        if (!Number.isFinite(gb) || gb < CACHE_FLOOR_BYTES / (1024 ** 3) || gb > CACHE_CEILING_BYTES / (1024 ** 3)) {
+          throw new Error('Cache size must be between 1 and 100 GB')
+        }
+        validated[key] = Math.round(gb * 10) / 10
+      } else {
+        validated[key] = val
+      }
+    }
+
+    for (const [key, val] of Object.entries(validated)) {
       store.set(key, val)
     }
 
-    if ('openAtLogin' in partial) {
-      app.setLoginItemSettings({ openAtLogin: Boolean(partial.openAtLogin) })
+    if ('openAtLogin' in validated) {
+      app.setLoginItemSettings({ openAtLogin: validated.openAtLogin as boolean })
     }
 
-    if ('maxCacheSizeGb' in partial) {
-      const gb = Number(partial.maxCacheSizeGb)
-      if (Number.isFinite(gb) && gb > 0) {
-        setCacheLimitBytes(Math.round(gb * 1024 * 1024 * 1024))
-        evictToLimit(getCacheLimitBytes())
-      }
+    if ('maxCacheSizeGb' in validated) {
+      const gb = validated.maxCacheSizeGb as number
+      setCacheLimitBytes(Math.round(gb * 1024 * 1024 * 1024))
+      evictToLimit(getCacheLimitBytes())
     }
 
-    if ('showInDock' in partial) {
-      if (partial.showInDock && app.dock) {
+    if ('showInDock' in validated) {
+      if (validated.showInDock && app.dock) {
         app.dock.show()
       } else if (app.dock) {
         app.dock.hide()
@@ -330,13 +392,19 @@ function registerIpcHandlers(): void {
     return true
   })
 
-  ipcMain.handle('performance:set-mode', (_event, { displayId, mode }) => {
+  ipcMain.handle('performance:set-mode', (event, payload) => {
+    requireTrustedIpcSender(event)
+    const { displayId, mode } = payload && typeof payload === 'object' ? payload : {}
+    if (!isKnownDisplay(displayId) || typeof mode !== 'string' || !VALID_PERFORMANCE_MODES.has(mode)) {
+      throw new Error('Invalid display or performance mode')
+    }
     setPerformanceMode(String(displayId), mode)
     setPerformanceModeForDisplay(displayId, mode)
     return true
   })
 
-  ipcMain.handle('import:file', async () => {
+  ipcMain.handle('import:file', async (event) => {
+    requireTrustedIpcSender(event)
     const result = await dialog.showOpenDialog({
       title: 'Import Wallpaper Video or Image',
       properties: ['openFile'],
@@ -351,6 +419,12 @@ function registerIpcHandlers(): void {
 
     const sourcePath = result.filePaths[0]
     const filename = path.basename(sourcePath)
+    const extension = path.extname(filename).toLowerCase()
+    if (!VALID_IMPORT_EXTENSIONS.has(extension)) {
+      throw new Error('Unsupported wallpaper file type')
+    }
+    const sourceStat = fs.statSync(sourcePath)
+    if (!sourceStat.isFile()) throw new Error('Selected wallpaper is not a file')
     const isVideo = /\.(mp4|mov|webm)$/i.test(filename)
 
     // Copy the import into the managed folder so the wallpaper is stable even if
@@ -371,8 +445,8 @@ function registerIpcHandlers(): void {
       title: filename.replace(/\.[^/.]+$/, ''),
       category: 'imported' as const,
       type: isVideo ? 'video' : 'user-import',
-      previewUrl: `media://${targetPath}`,
-      sourceUrl: `media://${targetPath}`,
+      previewUrl: toMediaUrl(targetPath),
+      sourceUrl: toMediaUrl(targetPath),
       resolution: { width: 3840, height: 2160 },
       source: 'user' as const,
       license: 'User Imported File',
@@ -384,17 +458,20 @@ function registerIpcHandlers(): void {
     return existing || newItem
   })
 
-  ipcMain.handle('cache:clear', () => {
+  ipcMain.handle('cache:clear', (event) => {
+    requireTrustedIpcSender(event)
     return clearCache()
   })
 
-  ipcMain.handle('cache:status', () => {
+  ipcMain.handle('cache:status', (event) => {
+    requireTrustedIpcSender(event)
     return getCacheStatus()
   })
 
   ipcMain.handle('cache:ensure', (event, url: string) => {
-    if (!isRemoteHttpUrl(url)) {
-      return Promise.reject(new Error('Refusing to cache non-http(s) URL'))
+    requireTrustedIpcSender(event)
+    if (!isAllowedRemoteMediaUrl(url)) {
+      return Promise.reject(new Error('Refusing to cache an untrusted media URL'))
     }
     return ensureCached(url)
   })
@@ -403,36 +480,43 @@ function registerIpcHandlers(): void {
     broadcastCacheProgress(progress)
   })
 
-  ipcMain.handle('settings:set-login-at-login', (_event, openAtLogin: boolean) => {
+  ipcMain.handle('settings:set-login-at-login', (event, openAtLogin: boolean) => {
+    requireTrustedIpcSender(event)
+    if (typeof openAtLogin !== 'boolean') throw new Error('Invalid login setting')
     app.setLoginItemSettings({ openAtLogin })
     store.set('openAtLogin', openAtLogin)
     return true
   })
 
-  ipcMain.handle('wallpaper:open-folder', () => {
+  ipcMain.handle('wallpaper:open-folder', (event) => {
+    requireTrustedIpcSender(event)
     const folderPath = getVantageWallpapersFolder()
     shell.openPath(folderPath)
     return folderPath
   })
 
-  ipcMain.handle('wallpaper:scan-local-folder', () => {
+  ipcMain.handle('wallpaper:scan-local-folder', (event) => {
+    requireTrustedIpcSender(event)
     return scanVantageWallpapersFolder()
   })
 
   ipcMain.handle('window:minimize', (event) => {
+    requireTrustedIpcSender(event)
     const win = BrowserWindow.fromWebContents(event.sender)
     if (win) win.minimize()
   })
 
   ipcMain.handle('window:close', (event) => {
+    requireTrustedIpcSender(event)
     const win = BrowserWindow.fromWebContents(event.sender)
     if (win) win.close()
   })
 
-  ipcMain.handle('shell:open-external', (_event, url: string) => {
+  ipcMain.handle('shell:open-external', (event, url: string) => {
+    requireTrustedIpcSender(event)
     try {
       const parsed = new URL(url)
-      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      if (parsed.protocol === 'https:') {
         shell.openExternal(parsed.href)
       }
     } catch {
@@ -441,6 +525,7 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('wallpaper:get-initial-state', (event) => {
+    requireTrustedIpcSender(event)
     const webContents = event.sender
     const win = BrowserWindow.fromWebContents(webContents)
     if (!win) return { wallpaper: null, performanceMode: 'balanced', isPlaying: true }
@@ -453,7 +538,7 @@ function registerIpcHandlers(): void {
     ) || displays[0]
 
     const assignment = getDisplayAssignment(String(matchingDisplay.id))
-    const wallpaper = assignment.wallpaperId ? getWallpaperById(assignment.wallpaperId) : getWallpaperById(DEFAULT_WALLPAPER_ID)
+    const wallpaper = getWallpaperById(assignment.wallpaperId || DEFAULT_WALLPAPER_ID) || getWallpaperById(DEFAULT_WALLPAPER_ID)
 
     return {
       wallpaper,
@@ -481,8 +566,25 @@ app.whenReady().then(() => {
   ]
 
   function isPathAllowed(filePath: string): boolean {
-    const resolved = path.resolve(filePath).toLowerCase()
-    return allowedMediaBasePaths.some((base) => resolved.startsWith(path.resolve(base).toLowerCase()))
+    let canonicalFile: string
+    try {
+      canonicalFile = fs.realpathSync(filePath).toLowerCase()
+    } catch {
+      return false
+    }
+
+    return allowedMediaBasePaths.some((base) => {
+      try {
+        const canonicalBase = fs.realpathSync(base).toLowerCase()
+        const relative = path.relative(canonicalBase, canonicalFile)
+        return (
+          relative === '' ||
+          (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative))
+        )
+      } catch {
+        return false
+      }
+    })
   }
 
   const MEDIA_MIME_TYPES: Record<string, string> = {

@@ -3,6 +3,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import type { WallpaperItem } from '../shared/types'
 import { addWallpaperToDb, pruneStaticWallpapers, getWallpaperById } from './db'
+import { toMediaUrl } from './mediaUrl'
 
 const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp']
 
@@ -30,8 +31,14 @@ export function getStaticSourceDirs(): string[] {
   }
 
   const dropIn = path.join(app.getPath('pictures'), 'Vantage Wallpapers', 'Static')
-  if (fs.existsSync(dropIn)) {
+  try {
+    // Create the drop-in directory once so it is also watched when the user
+    // adds it after the first launch.
+    fs.mkdirSync(dropIn, { recursive: true })
     dirs.push(dropIn)
+  } catch {
+    // The user may have denied access to Pictures; keep the bundled source
+    // available and let the caller report any watch failure.
   }
 
   return dirs
@@ -57,9 +64,13 @@ function scanDir(dir: string): ScannedImage[] {
     .filter((f) => IMAGE_EXTS.includes(path.extname(f).toLowerCase()))
     .map((f) => {
       const filePath = path.join(dir, f)
-      const stat = fs.statSync(filePath, { throwIfNoEntry: false })
-      if (!stat || !stat.isFile()) return null
-      return { filePath, name: f }
+      try {
+        const stat = fs.statSync(filePath, { throwIfNoEntry: false })
+        if (!stat || !stat.isFile()) return null
+        return { filePath, name: f }
+      } catch {
+        return null
+      }
     })
     .filter((f): f is ScannedImage => Boolean(f))
 }
@@ -85,8 +96,8 @@ export function buildStaticManifest(): StaticManifest {
         title: base,
         category: 'static',
         type: 'image',
-        previewUrl: `media://${entry.filePath}`,
-        sourceUrl: `media://${entry.filePath}`,
+        previewUrl: toMediaUrl(entry.filePath),
+        sourceUrl: toMediaUrl(entry.filePath),
         resolution: { width: 3840, height: 2160 },
         source: 'static',
         license: 'Wallpaper X Extracted Collection',
@@ -103,10 +114,10 @@ export function syncStaticWallpapers(): number {
   const { items, presentIds } = buildStaticManifest()
   let added = 0
   for (const item of items) {
-    if (!getWallpaperById(item.id)) {
-      addWallpaperToDb(item)
-      added++
-    }
+    if (!getWallpaperById(item.id)) added++
+    // Re-sync paths and metadata as well as registering new files. This also
+    // repairs records created before media URL escaping was introduced.
+    addWallpaperToDb(item)
   }
   pruneStaticWallpapers(presentIds)
   return added

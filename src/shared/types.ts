@@ -30,8 +30,6 @@ export interface AppSettings {
   openAtLogin: boolean
   showInDock: boolean
   showOnLockScreen: boolean
-  pexelsApiKey?: string
-  unsplashApiKey?: string
   maxCacheSizeGb: number
   theme: string
 }

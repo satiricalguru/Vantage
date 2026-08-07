@@ -26,7 +26,7 @@
 
 **Vantage** is a free, open-source, ultra-performance native live wallpaper application engineered specifically for macOS. Built with high-efficiency streaming protocols and direct macOS Desktop level window hooks (`kCGDesktopWindowLevel`), Vantage transforms your desktop into a fluid canvas without sacrificing performance or battery life.
 
-Whether you want crisp 4K 60fps video loops, interactive particle physics, AI-generated ambient wallpapers, or curated artwork from Pexels & Unsplash, Vantage delivers a seamless visual experience across single and multi-monitor setups.
+Whether you want crisp high-resolution video loops, interactive particle physics, AI-generated ambient wallpapers, or local imports, Vantage delivers a seamless visual experience across single and multi-monitor setups. Optional remote-source adapters are kept behind the main-process network boundary.
 
 ---
 
@@ -46,15 +46,13 @@ Whether you want crisp 4K 60fps video loops, interactive particle physics, AI-ge
 - **Toggle Control**: Enable or disable Lock Screen wallpaper rendering anytime from the Preferences panel.
 
 ### 🔋 Battery & Energy Saver Intelligence
-- **Automatic Battery Pause**: Automatically freezes video playback and canvas animations when running on battery power to conserve battery.
-- **Low Power Mode Support**: Integrates with macOS system low-power mode to minimize background GPU usage.
-- **Fullscreen App Awareness**: Automatically suspends wallpaper rendering whenever a fullscreen application or game is active.
+- **Battery Saver Mode**: Automatically reduces canvas cadence and video playback speed when running on battery power to conserve energy.
 
 
 ### 🌌 AI & Generative Live Canvas
 - **Generative Particle Engine**: Real-time customizable particle systems with dynamic light fields and interactive cursor responses.
 - **AI Still Animation**: Transforms static high-res wallpapers into lively atmospheric motion scenes with depth parallax and subtle ambient movement.
-- **Configurable Frame Rates**: Choose between 60 FPS (High Performance), 30 FPS (Balanced), or 15 FPS (Eco Mode).
+- **Configurable Render Cadence**: Choose Quality, Balanced, or Battery Saver behavior per display.
 
 ### 📂 Automatic Local Folder Watcher & Import
 - **Instant Folder Import**: Simply drop `.mp4`, `.mov`, `.webm`, `.png`, `.jpg`, or `.webp` files into `~/Pictures/Vantage Wallpapers/`.
@@ -79,10 +77,10 @@ Vantage is built with a dual-process architecture separating the core system ser
                          ┌──────────────────────────┴──────────────────────────┐
                          │       Electron Main Process (System Service)        │
                          │                                                     │
-                         │  • SQLite Database (better-sqlite3)                │
+                         │  • SQLite Database (better-sqlite3)                 │
                          │  • Custom media:// Protocol (HTTP 206 Range Stream) │
                          │  • Power/Battery Observer                           │
-                         │  • Display Manager (Multi-Monitor IPC)             │
+                         │  • Display Manager (Multi-Monitor IPC)              │
                          │  • Menu Bar Tray Handler                            │
                          └───────┬──────────────────────────┬──────────────────┘
                                  │                          │
@@ -104,9 +102,9 @@ Vantage offers 3 distinct performance tiers to balance visuals with energy effic
 
 | Performance Mode | Frame Rate | Recommended Use Case |
 | :--- | :--- | :--- |
-| **🚀 High Performance** | **60 FPS** | Dedicated GPU setups, plugged-in power workstations |
-| **⚖️ Balanced Mode** | **30 FPS** | Standard daily usage with smooth playback & low energy |
-| **🌱 Eco Saver Mode** | **15 FPS** | Maximum energy conservation on MacBook battery |
+| **🚀 Quality** | Up to 60 FPS canvas cadence | Dedicated GPU setups, plugged-in power workstations |
+| **⚖️ Balanced** | Up to 30 FPS canvas cadence | Standard daily usage with lower energy use |
+| **🌱 Battery Saver** | Up to 15 FPS canvas cadence | Maximum canvas energy conservation on MacBook battery |
 
 ---
 
@@ -114,11 +112,11 @@ Vantage offers 3 distinct performance tiers to balance visuals with energy effic
 
 | Component | Technology | Description |
 | :--- | :--- | :--- |
-| **Framework** | [Electron 34](https://www.electronjs.org/) | Cross-platform desktop application runtime |
+| **Framework** | [Electron 43](https://www.electronjs.org/) | macOS desktop application runtime |
 | **Frontend Framework** | [React 18](https://react.dev/) | Modern component-based UI library |
 | **Language** | [TypeScript 5.7](https://www.typescriptlang.org/) | Type-safe programming language |
 | **Styling & Motion** | [Tailwind CSS](https://tailwindcss.com/) & [Framer Motion](https://www.framer.com/motion/) | Utility-first CSS & fluid animation library |
-| **Build System** | [Vite 5](https://vitejs.dev/) (`electron-vite`) | Lightning-fast module bundler & dev server |
+| **Build System** | [Vite 7](https://vitejs.dev/) (`electron-vite`) | Lightning-fast module bundler & dev server |
 | **Database** | [SQLite](https://github.com/WiseLibs/better-sqlite3) (`better-sqlite3`) | High-speed local database storage |
 | **Icons** | [Lucide React](https://lucide.dev/) | Beautiful & consistent open-source icon suite |
 

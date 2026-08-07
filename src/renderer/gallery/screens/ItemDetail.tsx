@@ -23,6 +23,9 @@ export const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
   return (
     <div
       className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="wallpaper-detail-title"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >      <div className="bg-panel border border-line rounded-xl max-w-3xl w-full overflow-hidden shadow-2xl flex flex-col md:flex-row">
         {/* Preview media pane */}
@@ -50,6 +53,7 @@ export const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
 
           <button
             onClick={onClose}
+            aria-label="Close wallpaper details"
             className="absolute top-3 right-3 p-1.5 rounded-full bg-black/60 text-ink hover:text-white hover:bg-black transition"
           >
             <X className="w-4 h-4" />
@@ -61,7 +65,7 @@ export const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
           <div>
             <div className="flex items-start justify-between mb-3">
               <div>
-                <h2 className="text-xl font-semibold text-ink leading-tight">{item.title}</h2>
+                <h2 id="wallpaper-detail-title" className="text-xl font-semibold text-ink leading-tight">{item.title}</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="font-mono text-[10px] uppercase px-2 py-0.5 rounded bg-panel-hover text-glow border border-glow/20">
                     {item.type}

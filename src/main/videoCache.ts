@@ -5,13 +5,28 @@ import crypto from 'node:crypto'
 
 export const DEFAULT_CACHE_MAX_BYTES = 5 * 1024 * 1024 * 1024
 export const CACHE_FLOOR_BYTES = 1 * 1024 * 1024 * 1024
+export const CACHE_CEILING_BYTES = 100 * 1024 * 1024 * 1024
+export const MAX_CACHE_DOWNLOAD_BYTES = 1 * 1024 * 1024 * 1024
+const CACHE_DOWNLOAD_TIMEOUT_MS = 2 * 60 * 1000
 const VIDEO_EXTS = new Set(['.mp4', '.webm', '.mov', '.m4v', '.mkv'])
+const ALLOWED_MEDIA_HOSTS = new Set([
+  'motionbgs.com',
+  'www.motionbgs.com',
+  'videos.pexels.com',
+  'images.pexels.com',
+  'www.pexels.com',
+  'images.unsplash.com',
+  'plus.unsplash.com'
+])
 
 let cacheLimitBytes = DEFAULT_CACHE_MAX_BYTES
 
 export function setCacheLimitBytes(bytes: number): void {
-  if (Number.isFinite(bytes) && bytes >= CACHE_FLOOR_BYTES) {
-    cacheLimitBytes = bytes
+  if (Number.isFinite(bytes)) {
+    cacheLimitBytes = Math.min(
+      CACHE_CEILING_BYTES,
+      Math.max(CACHE_FLOOR_BYTES, Math.round(bytes))
+    )
   }
 }
 
@@ -29,6 +44,23 @@ export function getCacheDir(): string {
 
 export function isRemoteHttpUrl(url: string | undefined | null): boolean {
   return typeof url === 'string' && /^https?:\/\//i.test(url)
+}
+
+/** Only known media providers may be downloaded into the local cache. */
+export function isAllowedRemoteMediaUrl(url: string | undefined | null): boolean {
+  if (!isRemoteHttpUrl(url)) return false
+  try {
+    const parsed = new URL(url as string)
+    return (
+      parsed.protocol === 'https:' &&
+      !parsed.username &&
+      !parsed.password &&
+      !parsed.port &&
+      ALLOWED_MEDIA_HOSTS.has(parsed.hostname.toLowerCase())
+    )
+  } catch {
+    return false
+  }
 }
 
 export function cacheKeyForUrl(url: string): string {
@@ -93,7 +125,8 @@ export function getCachedFilePath(url: string): string | null {
     if (file.startsWith(key) && !file.endsWith('.part')) {
       const full = path.join(dir, file)
       try {
-        if (fs.statSync(full).size > 0) {
+        const stat = fs.statSync(full)
+        if (stat.isFile() && stat.size > 0) {
           touch(full)
           return full
         }
@@ -110,17 +143,19 @@ export function cancelDownload(url: string): void {
   controllers.delete(url)
 }
 
-export function cancelAllDownloads(): void {
+export async function cancelAllDownloads(): Promise<void> {
+  const active = [...pending.values()]
   for (const controller of controllers.values()) {
     controller.abort()
   }
+  await Promise.allSettled(active)
   controllers.clear()
   pending.clear()
 }
 
 export function ensureCached(url: string): Promise<string> {
-  if (!isRemoteHttpUrl(url)) {
-    return Promise.reject(new Error('Refusing to cache non-http(s) URL'))
+  if (!isAllowedRemoteMediaUrl(url)) {
+    return Promise.reject(new Error('Refusing to cache an untrusted media URL'))
   }
 
   const existing = getCachedFilePath(url)
@@ -136,45 +171,76 @@ export function ensureCached(url: string): Promise<string> {
   controllers.set(url, controller)
 
   const promise = (async () => {
-    let resp
+    let resp: Response
+    let writeStream: fs.WriteStream | null = null
+    const timeout = setTimeout(() => controller.abort(), CACHE_DOWNLOAD_TIMEOUT_MS)
     try {
-      resp = await net.fetch(url, { signal: controller.signal })
-    } catch (err) {
-      console.error('[Cache] Fetch failed:', url, err)
-      throw err
-    }
-    if (!resp.ok || resp.body == null) {
-      console.error('[Cache] Download failed with status:', resp.status, url)
-      throw new Error(`Download failed with status ${resp.status}`)
-    }
+      resp = await net.fetch(url, {
+        signal: controller.signal,
+        redirect: 'error'
+      })
 
-    const total = Number(resp.headers.get('content-length')) || 0
-    let received = 0
-    const writeStream = fs.createWriteStream(partPath)
-    const reader = resp.body.getReader()
+      if (!resp.ok || resp.body == null) {
+        console.error('[Cache] Download failed with status:', resp.status, url)
+        throw new Error(`Download failed with status ${resp.status}`)
+      }
 
-    try {
+      const contentType = (resp.headers.get('content-type') || '').split(';')[0].trim().toLowerCase()
+      if (!contentType || (!contentType.startsWith('video/') && contentType !== 'application/octet-stream')) {
+        throw new Error(`Refusing cached response with content type ${contentType}`)
+      }
+
+      const total = Number(resp.headers.get('content-length')) || 0
+      if (total > MAX_CACHE_DOWNLOAD_BYTES) {
+        throw new Error(`Cached response exceeds ${MAX_CACHE_DOWNLOAD_BYTES} bytes`)
+      }
+
+      let received = 0
+      try {
+        fs.unlinkSync(partPath)
+      } catch {
+        // No stale partial download to remove.
+      }
+      writeStream = fs.createWriteStream(partPath)
+      const reader = resp.body.getReader()
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
         received += value.byteLength
+        if (received > MAX_CACHE_DOWNLOAD_BYTES) {
+          await reader.cancel()
+          throw new Error(`Cached response exceeds ${MAX_CACHE_DOWNLOAD_BYTES} bytes`)
+        }
         emitProgress(url, received, total, total > 0 ? Math.round((received / total) * 100) : 0)
-        if (!writeStream.write(value)) {
-          await new Promise<void>((resolve) => writeStream.once('drain', () => resolve()))
+        if (!writeStream!.write(value)) {
+          await new Promise<void>((resolve, reject) => {
+            const onDrain = () => {
+              writeStream!.removeListener('error', onError)
+              resolve()
+            }
+            const onError = (err: Error) => {
+              writeStream!.removeListener('drain', onDrain)
+              reject(err)
+            }
+            writeStream!.once('drain', onDrain)
+            writeStream!.once('error', onError)
+          })
         }
       }
       await new Promise<void>((resolve, reject) => {
-        writeStream.once('error', reject)
-        writeStream.end(() => resolve())
+        writeStream!.once('error', reject)
+        writeStream!.end(() => resolve())
       })
     } catch (err) {
-      writeStream.destroy()
+      writeStream?.destroy()
       try {
         fs.unlinkSync(partPath)
       } catch {
         // nothing to clean up
       }
       throw err
+    } finally {
+      clearTimeout(timeout)
     }
 
     fs.renameSync(partPath, finalPath)
@@ -206,8 +272,10 @@ export function evictToLimit(maxBytes: number, dir = getCacheDir()): void {
       .map((f) => {
         const filePath = path.join(dir, f)
         const stat = fs.statSync(filePath)
+        if (!stat.isFile()) return null
         return { filePath, size: stat.size, mtime: stat.mtimeMs }
       })
+      .filter((entry): entry is { filePath: string; size: number; mtime: number } => Boolean(entry))
   } catch {
     return
   }
@@ -254,9 +322,9 @@ export function getCacheStatus(): {
   return { usedBytes, count, limitBytes: cacheLimitBytes }
 }
 
-export function clearCache(): number {
+export async function clearCache(): Promise<number> {
   const dir = getCacheDir()
-  cancelAllDownloads()
+  await cancelAllDownloads()
   let deletedBytes = 0
   let files: string[]
   try {

@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { AppSettings, DisplayInfo } from '../shared/types'
 
 contextBridge.exposeInMainWorld('galleryApi', {
   getWallpapers: (category?: string, query?: string) =>
@@ -9,7 +10,7 @@ contextBridge.exposeInMainWorld('galleryApi', {
     ipcRenderer.invoke('wallpaper:favorite', { wallpaperId, isFavorite }),
   getDisplays: () => ipcRenderer.invoke('display:list'),
   getSettings: () => ipcRenderer.invoke('settings:get'),
-  setSettings: (partial: any) => ipcRenderer.invoke('settings:set', partial),
+  setSettings: (partial: Partial<AppSettings>) => ipcRenderer.invoke('settings:set', partial),
   setPerformanceMode: (displayId: number, mode: string) =>
     ipcRenderer.invoke('performance:set-mode', { displayId, mode }),
   importFile: () => ipcRenderer.invoke('import:file'),
@@ -20,8 +21,8 @@ contextBridge.exposeInMainWorld('galleryApi', {
   setLoginAtLogin: (openAtLogin: boolean) =>
     ipcRenderer.invoke('settings:set-login-at-login', openAtLogin),
   openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
-  onDisplayChanged: (callback: (displays: any[]) => void) => {
-    const handler = (_event: any, displays: any[]) => callback(displays)
+  onDisplayChanged: (callback: (displays: DisplayInfo[]) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, displays: DisplayInfo[]) => callback(displays)
     ipcRenderer.on('display:changed', handler)
     return () => ipcRenderer.removeListener('display:changed', handler)
   },

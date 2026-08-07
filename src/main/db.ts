@@ -4,6 +4,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { INITIAL_WALLPAPERS } from './contentSources'
 import { WallpaperItem, DEFAULT_WALLPAPER_ID } from '../shared/types'
+import { toMediaUrl } from './mediaUrl'
 
 let db: Database.Database | null = null
 
@@ -17,6 +18,9 @@ export function initDatabase(): Database.Database {
 
   const dbPath = path.join(userDataPath, 'vantage.db')
   db = new Database(dbPath)
+  db.pragma('foreign_keys = ON')
+  db.pragma('busy_timeout = 5000')
+  db.pragma('journal_mode = WAL')
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS wallpapers (
@@ -114,12 +118,12 @@ function resolveMediaUrl(url: string | undefined | null): string {
   if (url.startsWith('resources/')) {
     const baseDir = app.isPackaged ? process.resourcesPath : app.getAppPath()
     const fullPath = path.join(baseDir, url)
-    return `media://${fullPath}`
+    return toMediaUrl(fullPath)
   }
   if (url.startsWith('extracted/')) {
     const baseDir = app.isPackaged ? process.resourcesPath : app.getAppPath()
     const fullPath = path.join(baseDir, 'Extracted_Video_Wallpapers', url.slice('extracted/'.length))
-    return `media://${fullPath}`
+    return toMediaUrl(fullPath)
   }
   return url
 }
@@ -218,8 +222,16 @@ export function getDisplayAssignment(displayId: string): { wallpaperId: string |
   if (!row) {
     return { wallpaperId: DEFAULT_WALLPAPER_ID, performanceMode: 'balanced' }
   }
+
+  // A folder watcher can remove a wallpaper after it has been assigned. Never
+  // return a dangling ID to the renderer; it would otherwise render a blank
+  // wallpaper window until the user manually reassigns it.
+  let wallpaperId = row.wallpaper_id || DEFAULT_WALLPAPER_ID
+  const exists = database.prepare('SELECT 1 FROM wallpapers WHERE id = ?').get(wallpaperId)
+  if (!exists) wallpaperId = DEFAULT_WALLPAPER_ID
+
   return {
-    wallpaperId: row.wallpaper_id || DEFAULT_WALLPAPER_ID,
+    wallpaperId,
     performanceMode: row.performance_mode || 'balanced'
   }
 }
@@ -277,13 +289,26 @@ export function pruneUserFolderEntries(keptIds: string[]): void {
   const database = initDatabase()
   const placeHolders = keptIds.map(() => '?').join(',')
   try {
-    if (keptIds.length > 0) {
-      database.prepare(
-        `DELETE FROM wallpapers WHERE source = 'user' AND id LIKE 'user-folder-%' AND id NOT IN (${placeHolders})`
-      ).run(...keptIds)
-    } else {
-      database.prepare(`DELETE FROM wallpapers WHERE source = 'user' AND id LIKE 'user-folder-%'`).run()
-    }
+    const prune = database.transaction(() => {
+      if (keptIds.length > 0) {
+        database.prepare(
+          `UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (
+            SELECT id FROM wallpapers WHERE source = 'user' AND id LIKE 'user-folder-%' AND id NOT IN (${placeHolders})
+          )`
+        ).run(DEFAULT_WALLPAPER_ID, ...keptIds)
+        database.prepare(
+          `DELETE FROM wallpapers WHERE source = 'user' AND id LIKE 'user-folder-%' AND id NOT IN (${placeHolders})`
+        ).run(...keptIds)
+      } else {
+        database.prepare(
+          `UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (
+            SELECT id FROM wallpapers WHERE source = 'user' AND id LIKE 'user-folder-%'
+          )`
+        ).run(DEFAULT_WALLPAPER_ID)
+        database.prepare(`DELETE FROM wallpapers WHERE source = 'user' AND id LIKE 'user-folder-%'`).run()
+      }
+    })
+    prune()
   } catch (err) {
     console.warn('[DB] Error pruning removed folder entries:', err)
   }
@@ -294,13 +319,26 @@ export function pruneStaticWallpapers(keptIds: string[]): void {
   const database = initDatabase()
   const placeHolders = keptIds.map(() => '?').join(',')
   try {
-    if (keptIds.length > 0) {
-      database.prepare(
-        `DELETE FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%' AND id NOT IN (${placeHolders})`
-      ).run(...keptIds)
-    } else {
-      database.prepare(`DELETE FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%'`).run()
-    }
+    const prune = database.transaction(() => {
+      if (keptIds.length > 0) {
+        database.prepare(
+          `UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (
+            SELECT id FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%' AND id NOT IN (${placeHolders})
+          )`
+        ).run(DEFAULT_WALLPAPER_ID, ...keptIds)
+        database.prepare(
+          `DELETE FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%' AND id NOT IN (${placeHolders})`
+        ).run(...keptIds)
+      } else {
+        database.prepare(
+          `UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (
+            SELECT id FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%'
+          )`
+        ).run(DEFAULT_WALLPAPER_ID)
+        database.prepare(`DELETE FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%'`).run()
+      }
+    })
+    prune()
   } catch (err) {
     console.warn('[DB] Error pruning removed static entries:', err)
   }

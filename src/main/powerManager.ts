@@ -5,6 +5,7 @@ import { refreshTrayMenu } from './tray'
 import store from './store'
 
 let playbackBeforeLock: boolean | null = null
+let playbackBeforeSuspend: boolean | null = null
 
 export function initPowerManager(): void {
   powerMonitor.on('lock-screen', () => {
@@ -34,12 +35,16 @@ export function initPowerManager(): void {
 
   powerMonitor.on('suspend', () => {
     console.log('[PowerManager] System suspending. Pausing wallpapers.')
+    playbackBeforeSuspend = getGlobalPlaybackState()
     setGlobalPlaybackState(false)
   })
 
   powerMonitor.on('resume', () => {
-    console.log('[PowerManager] System resumed. Resuming wallpapers.')
-    setGlobalPlaybackState(true)
+    console.log('[PowerManager] System resumed. Restoring wallpaper playback state.')
+    if (playbackBeforeSuspend !== null) {
+      setGlobalPlaybackState(playbackBeforeSuspend)
+      playbackBeforeSuspend = null
+    }
   })
 
   powerMonitor.on('on-battery', () => {

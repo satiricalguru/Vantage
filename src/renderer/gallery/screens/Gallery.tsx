@@ -122,6 +122,14 @@ const WallpaperTile: React.FC<WallpaperTileProps> = ({ item, onSelect }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onSelect(item)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onSelect(item)
+        }
+      }}
+      role="button"
+      tabIndex={0}
       className="group relative bg-panel border border-line hover:border-glow/60 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl flex flex-col"
     >
       {/* Media Aspect Container */}
@@ -140,6 +148,7 @@ const WallpaperTile: React.FC<WallpaperTileProps> = ({ item, onSelect }) => {
               loop
               muted
               playsInline
+              preload="metadata"
               onError={() => setHasVideoError(true)}
               className="w-full h-full object-cover"
             />
@@ -147,6 +156,8 @@ const WallpaperTile: React.FC<WallpaperTileProps> = ({ item, onSelect }) => {
             <img
               src={item.previewUrl || item.sourceUrl}
               alt={item.title}
+              loading="lazy"
+              decoding="async"
               onError={() => setHasImageError(true)}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
@@ -157,6 +168,8 @@ const WallpaperTile: React.FC<WallpaperTileProps> = ({ item, onSelect }) => {
           <img
             src={item.previewUrl || item.sourceUrl}
             alt={item.title}
+            loading="lazy"
+            decoding="async"
             onError={() => setHasImageError(true)}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
@@ -187,6 +200,7 @@ const WallpaperTile: React.FC<WallpaperTileProps> = ({ item, onSelect }) => {
             e.stopPropagation()
             toggleFavorite(item.id, item.is_favorite)
           }}
+          aria-label={item.is_favorite ? `Remove ${item.title} from favorites` : `Add ${item.title} to favorites`}
           className="absolute top-2 right-2 z-10 p-1.5 rounded-lg bg-black/60 backdrop-blur-md text-ink-dim hover:text-rose-400 transition"
         >
           <Heart
@@ -220,6 +234,7 @@ export const Gallery: React.FC = () => {
   const {
     wallpapers,
     isLoading,
+    error,
     setSelectedWallpaper,
     searchQuery,
     setSearchQuery,
@@ -240,11 +255,17 @@ export const Gallery: React.FC = () => {
         <div className="relative flex-1 max-w-md [-webkit-app-region:no-drag]">
           <input
             type="text"
+            aria-label="Search wallpapers"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search wallpapers (e.g. nature, space, matrix)..."
             className="w-full bg-panel border border-line rounded-lg px-3.5 py-1.5 text-xs text-ink placeholder-ink-dim focus:outline-none focus:border-glow/50 font-sans"
           />
+          {error && (
+            <div role="alert" className="mt-2 text-[11px] font-mono text-red-300">
+              {error}
+            </div>
+          )}
         </div>
 
         {/* Media Format Segment Tabs */}

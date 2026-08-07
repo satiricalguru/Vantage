@@ -8,6 +8,16 @@ export interface RemoteSearchResult {
   error?: string
 }
 
+async function fetchWithTimeout(url: string, init: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 15_000)
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 interface PexelsVideoFile {
   id: number
   quality: string
@@ -60,7 +70,7 @@ async function searchPexels(query: string, apiKey: string): Promise<WallpaperIte
   url.searchParams.set('per_page', '30')
   url.searchParams.set('orientation', 'landscape')
 
-  const resp = await fetch(url.toString(), {
+  const resp = await fetchWithTimeout(url.toString(), {
     headers: { Authorization: apiKey }
   })
   if (!resp.ok) {
@@ -95,7 +105,7 @@ async function searchUnsplash(query: string, apiKey: string): Promise<WallpaperI
   url.searchParams.set('per_page', '30')
   url.searchParams.set('orientation', 'landscape')
 
-  const resp = await fetch(url.toString(), {
+  const resp = await fetchWithTimeout(url.toString(), {
     headers: { Authorization: `Client-ID ${apiKey}` }
   })
   if (!resp.ok) {

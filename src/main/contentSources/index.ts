@@ -17710,7 +17710,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17726,7 +17726,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17742,7 +17742,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17758,7 +17758,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17774,7 +17774,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17790,7 +17790,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17806,7 +17806,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17822,7 +17822,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17838,7 +17838,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17854,7 +17854,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17870,7 +17870,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17886,7 +17886,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17902,7 +17902,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17918,7 +17918,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17934,7 +17934,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17950,7 +17950,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17966,7 +17966,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17982,7 +17982,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -17998,7 +17998,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18014,7 +18014,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18030,7 +18030,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18046,7 +18046,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18062,7 +18062,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18078,7 +18078,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18094,7 +18094,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18110,7 +18110,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18126,7 +18126,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18142,7 +18142,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18158,7 +18158,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18174,7 +18174,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18190,7 +18190,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18206,7 +18206,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18222,7 +18222,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18238,7 +18238,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18254,7 +18254,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18270,7 +18270,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18286,7 +18286,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18302,7 +18302,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18318,7 +18318,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18334,7 +18334,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18350,7 +18350,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18366,7 +18366,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18382,7 +18382,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18398,7 +18398,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18414,7 +18414,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18430,7 +18430,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18446,7 +18446,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18462,7 +18462,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18478,7 +18478,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18494,7 +18494,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18510,7 +18510,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18526,7 +18526,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18542,7 +18542,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18558,7 +18558,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18574,7 +18574,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18590,7 +18590,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18606,7 +18606,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18622,7 +18622,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18638,7 +18638,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18654,7 +18654,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18670,7 +18670,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18686,7 +18686,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18702,7 +18702,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18718,7 +18718,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18734,7 +18734,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18750,7 +18750,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18766,7 +18766,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18782,7 +18782,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18798,7 +18798,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18814,7 +18814,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18830,7 +18830,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18846,7 +18846,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18862,7 +18862,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18878,7 +18878,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18894,7 +18894,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18910,7 +18910,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18926,7 +18926,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18942,7 +18942,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18958,7 +18958,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18974,7 +18974,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -18990,7 +18990,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19006,7 +19006,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19022,7 +19022,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19038,7 +19038,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19054,7 +19054,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19070,7 +19070,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19086,7 +19086,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19102,7 +19102,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19118,7 +19118,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19134,7 +19134,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19150,7 +19150,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19166,7 +19166,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19182,7 +19182,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19198,7 +19198,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19214,7 +19214,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19230,7 +19230,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19246,7 +19246,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19262,7 +19262,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19278,7 +19278,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19294,7 +19294,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19310,7 +19310,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19326,7 +19326,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19342,7 +19342,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19358,7 +19358,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19374,7 +19374,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19390,7 +19390,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19406,7 +19406,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19422,7 +19422,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19438,7 +19438,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19454,7 +19454,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19470,7 +19470,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19486,7 +19486,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19502,7 +19502,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19518,7 +19518,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19534,7 +19534,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19550,7 +19550,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19566,7 +19566,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19582,7 +19582,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19598,7 +19598,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19614,7 +19614,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19630,7 +19630,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19646,7 +19646,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19662,7 +19662,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19678,7 +19678,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19694,7 +19694,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19710,7 +19710,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19726,7 +19726,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19742,7 +19742,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19758,7 +19758,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19774,7 +19774,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },
@@ -19790,7 +19790,7 @@ export const INITIAL_WALLPAPERS: WallpaperItem[] = [
       "height": 1080
     },
     "duration": 20,
-    "source": "pexels",
+    "source": "custom",
     "license": "MotionBGS Free License",
     "attribution": "MotionBGS Nature Collection"
   },

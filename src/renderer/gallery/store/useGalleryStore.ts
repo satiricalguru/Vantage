@@ -12,6 +12,7 @@ interface GalleryStore {
   selectedWallpaper: WallpaperItem | null
   activeScreen: 'gallery' | 'settings' | 'credits'
   isLoading: boolean
+  error: string | null
 
   setActiveCategory: (cat: string) => void
   setFormatFilter: (filter: 'all' | 'video') => void
@@ -40,6 +41,7 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
   selectedWallpaper: null,
   activeScreen: 'gallery',
   isLoading: false,
+  error: null,
 
   setActiveCategory: (category) => {
     let fmt: 'all' | 'video' = 'all'
@@ -67,14 +69,20 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
 
   fetchWallpapers: async () => {
     const seq = ++fetchSeq
-    set({ isLoading: true })
+    set({ isLoading: true, error: null })
     if (window.galleryApi) {
-      const items = await window.galleryApi.getWallpapers(
-        get().activeCategory,
-        get().searchQuery
-      )
-      if (seq === fetchSeq) {
-        set({ wallpapers: items, isLoading: false })
+      try {
+        const items = await window.galleryApi.getWallpapers(
+          get().activeCategory,
+          get().searchQuery
+        )
+        if (seq === fetchSeq) {
+          set({ wallpapers: items, isLoading: false })
+        }
+      } catch (error) {
+        if (seq === fetchSeq) {
+          set({ isLoading: false, error: error instanceof Error ? error.message : 'Unable to load wallpapers.' })
+        }
       }
     } else {
       if (seq === fetchSeq) set({ isLoading: false })
@@ -83,49 +91,68 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
 
   fetchDisplays: async () => {
     if (window.galleryApi) {
-      const list = await window.galleryApi.getDisplays()
-      set({
-        displays: list,
-        selectedDisplayId: get().selectedDisplayId || (list[0]?.id ?? null)
-      })
+      try {
+        const list = await window.galleryApi.getDisplays()
+        set({
+          displays: list,
+          selectedDisplayId: get().selectedDisplayId || (list[0]?.id ?? null)
+        })
+      } catch (error) {
+        set({ error: error instanceof Error ? error.message : 'Unable to read displays.' })
+      }
     }
   },
 
   applyWallpaper: async (displayId, wallpaperId) => {
     if (window.galleryApi) {
-      await window.galleryApi.applyToDisplay(displayId, wallpaperId)
-      await get().fetchDisplays()
+      try {
+        await window.galleryApi.applyToDisplay(displayId, wallpaperId)
+        await get().fetchDisplays()
+      } catch (error) {
+        set({ error: error instanceof Error ? error.message : 'Unable to apply wallpaper.' })
+      }
     }
   },
 
   toggleFavorite: async (wallpaperId, currentFav) => {
     if (window.galleryApi) {
-      await window.galleryApi.toggleFavorite(wallpaperId, !currentFav)
-      await get().fetchWallpapers()
-      const updated = get().wallpapers.find((w) => w.id === wallpaperId)
-      const selected = get().selectedWallpaper
-      if (selected && updated && selected.id === wallpaperId) {
-        set({ selectedWallpaper: { ...selected, ...updated } })
+      try {
+        await window.galleryApi.toggleFavorite(wallpaperId, !currentFav)
+        await get().fetchWallpapers()
+        const updated = get().wallpapers.find((w) => w.id === wallpaperId)
+        const selected = get().selectedWallpaper
+        if (selected && updated && selected.id === wallpaperId) {
+          set({ selectedWallpaper: { ...selected, ...updated } })
+        }
+      } catch (error) {
+        set({ error: error instanceof Error ? error.message : 'Unable to update favorite.' })
       }
     }
   },
 
   importFile: async () => {
     if (window.galleryApi) {
-      const newItem = await window.galleryApi.importFile()
-      if (newItem) {
-        await get().fetchWallpapers()
-        set({ selectedWallpaper: newItem })
+      try {
+        const newItem = await window.galleryApi.importFile()
+        if (newItem) {
+          await get().fetchWallpapers()
+          set({ selectedWallpaper: newItem })
+        }
+      } catch (error) {
+        set({ error: error instanceof Error ? error.message : 'Unable to import wallpaper.' })
       }
     }
   },
 
   openWallpaperFolder: async () => {
     if (window.galleryApi) {
-      await window.galleryApi.openFolder()
-      await window.galleryApi.scanLocalFolder()
-      await get().fetchWallpapers()
+      try {
+        await window.galleryApi.openFolder()
+        await window.galleryApi.scanLocalFolder()
+        await get().fetchWallpapers()
+      } catch (error) {
+        set({ error: error instanceof Error ? error.message : 'Unable to scan wallpaper folder.' })
+      }
     }
   }
 }))
-

@@ -54,10 +54,27 @@
         "LSUIElement": true
       }
     },
+    "files": [
+      "out/**/*",
+      "resources/icons/**/*",
+      "package.json",
+      "!Extracted_Video_Wallpapers/**/*",
+      "!resources/thumbnails/**/*"
+    ],
     "extraResources": [
       {
         "from": "resources/thumbnails",
         "to": "resources/thumbnails"
+      },
+      {
+        "from": "Extracted_Video_Wallpapers",
+        "to": "Extracted_Video_Wallpapers",
+        "filter": [
+          "V8.mp4",
+          "V233.mp4",
+          "V295.mp4",
+          "Papers/**/*"
+        ]
       }
     ],
     "directories": {
