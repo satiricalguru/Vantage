@@ -1,30 +1,23 @@
 import { powerMonitor, screen } from 'electron'
-import { setGlobalPlaybackState, setPerformanceModeForDisplay, setLockScreenMode, getGlobalPlaybackState } from './wallpaperWindow'
+import { setGlobalPlaybackState, setPerformanceModeForDisplay, getGlobalPlaybackState } from './wallpaperWindow'
 import { getDisplayAssignment } from './db'
 import { refreshTrayMenu } from './tray'
-import store from './store'
 
 let playbackBeforeLock: boolean | null = null
 let playbackBeforeSuspend: boolean | null = null
 
 export function initPowerManager(): void {
   powerMonitor.on('lock-screen', () => {
-    const showOnLockScreen = store.get('showOnLockScreen', true)
-    console.log(`[PowerManager] Screen locked. showOnLockScreen: ${showOnLockScreen}`)
-    // Remember the user's playback state so we can restore it exactly on unlock
+    console.log('[PowerManager] Screen locked. macOS owns the authenticated Lock Screen; pausing desktop wallpapers.')
+    // An Electron wallpaper window cannot render through macOS's authenticated Lock Screen.
+    // Pause while hidden and restore the user's exact state after unlock.
     playbackBeforeLock = getGlobalPlaybackState()
-    if (showOnLockScreen) {
-      setLockScreenMode(true)
-    } else {
-      setLockScreenMode(false)
-      setGlobalPlaybackState(false)
-    }
+    setGlobalPlaybackState(false)
     refreshTrayMenu()
   })
 
   powerMonitor.on('unlock-screen', () => {
-    console.log('[PowerManager] Screen unlocked. Restoring normal desktop wallpaper mode.')
-    setLockScreenMode(false)
+    console.log('[PowerManager] Screen unlocked. Restoring desktop wallpaper playback state.')
     // Restore the exact state the user had before locking; never force-play over a pause
     if (playbackBeforeLock !== null) {
       setGlobalPlaybackState(playbackBeforeLock)

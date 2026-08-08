@@ -1,18 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useGalleryStore } from '../store/useGalleryStore'
 import type { AppSettings, CacheStatus } from '../../../shared/types'
-import { Zap, HardDrive, RefreshCw, AppWindow } from 'lucide-react'
+import { Zap, HardDrive, RefreshCw, AppWindow, Monitor } from 'lucide-react'
 
 export const Settings: React.FC = () => {
   const { displays, fetchDisplays } = useGalleryStore()
   const [settings, setSettingsState] = useState<AppSettings>({
     openAtLogin: true,
     showInDock: false,
-    showOnLockScreen: true,
     maxCacheSizeGb: 5,
     theme: 'dark'
   })
   const [clearedBytes, setClearedBytes] = useState<number | null>(null)
+  const [screenSaverBusy, setScreenSaverBusy] = useState(false)
+  const [screenSaverMessage, setScreenSaverMessage] = useState<string | null>(null)
 
   const [cacheStatus, setCacheStatus] = useState<CacheStatus | null>(null)
 
@@ -74,6 +75,21 @@ export const Settings: React.FC = () => {
     }
   }
 
+  const handleSetupScreenSaver = async () => {
+    if (!window.galleryApi || screenSaverBusy) return
+    setScreenSaverBusy(true)
+    setScreenSaverMessage(null)
+    try {
+      await window.galleryApi.setupScreenSaver()
+      setScreenSaverMessage('Installed and activated. Test with Screen Saver or a hot corner before locking; macOS will now use Vantage for the Screen Saver.')
+    } catch (err) {
+      console.error('[ScreenSaver] Setup failed:', err)
+      setScreenSaverMessage('Could not install the native Screen Saver. Build the macOS app first.')
+    } finally {
+      setScreenSaverBusy(false)
+    }
+  }
+
   return (
     <div className="p-6 pt-8 max-w-4xl mx-auto space-y-8 animate-fade-in overflow-y-auto h-full">
       <div className="[-webkit-app-region:drag]">
@@ -121,20 +137,28 @@ export const Settings: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-void border border-line rounded-lg">
+          <div className="flex items-center justify-between gap-4 p-3 bg-void border border-line rounded-lg">
             <div>
-              <div className="text-sm font-semibold text-ink">Show on macOS Lock Screen</div>
+              <div className="text-sm font-semibold text-ink">macOS Lock Screen & Screen Saver</div>
               <div className="text-xs text-ink-dim">
-                Keep live video and generative wallpapers active on the macOS Lock Screen when system is locked.
+                Vantage automatically syncs your wallpaper's thumbnail image as the macOS system background for your Lock Screen. Install the native Screen Saver below to play your live video wallpaper on the Lock Screen.
               </div>
             </div>
-            <input
-              type="checkbox"
-              checked={settings.showOnLockScreen ?? true}
-              onChange={(e) => handleSaveSettings({ showOnLockScreen: e.target.checked })}
-              className="w-4 h-4 accent-glow cursor-pointer"
-            />
+            <button
+              onClick={handleSetupScreenSaver}
+              disabled={screenSaverBusy}
+              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded bg-glow/10 border border-glow/30 text-xs font-mono text-glow hover:bg-glow/20 disabled:opacity-50 transition"
+            >
+              <Monitor className="w-3.5 h-3.5" />
+              <span>{screenSaverBusy ? 'Activating…' : 'Install & Activate'}</span>
+            </button>
           </div>
+
+          {screenSaverMessage && (
+            <div className="text-xs font-mono text-glow bg-glow/10 border border-glow/20 rounded p-2">
+              {screenSaverMessage}
+            </div>
+          )}
 
           <div className="flex items-center justify-between p-3 bg-void border border-line rounded-lg">
             <div>

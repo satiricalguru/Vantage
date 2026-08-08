@@ -40,10 +40,11 @@ Whether you want crisp high-resolution video loops, interactive particle physics
 - **Custom `media://` Protocol**: Bypasses browser memory limits by implementing custom HTTP 206 Partial Content (Range Request) streaming directly from disk.
 - **4K/60FPS Smooth Playback**: Plays heavy H.264/HEVC videos and WebM loops with near-zero memory footprint and smooth hardware acceleration.
 
-### 🔒 Lock Screen Live Wallpaper Support
-- **Seamless macOS Lock Screen Overlay**: Automatically elevates live video and AI wallpapers to the macOS screen saver window level (`kCGScreenSaverWindowLevel` / `'screen-saver'`) when your Mac is locked.
-- **Continuous Playback**: Live wallpapers continue playing smoothly behind your Lock Screen authentication interface.
-- **Toggle Control**: Enable or disable Lock Screen wallpaper rendering anytime from the Preferences panel.
+### 🔒 Native macOS Screen Saver
+- **True Screen Saver module**: Vantage builds a native universal `.saver` companion using Apple’s `ScreenSaverView` and AVFoundation APIs.
+- **Live video playback**: The companion reads the selected local video and loops it natively inside macOS Screen Saver.
+- **Lock Screen behavior**: macOS owns the authenticated login layer. Vantage pauses its Electron desktop wallpaper while locked; the native Screen Saver is the supported path for live content before password unlock.
+- **Setup**: Open Preferences → Install & Activate. Vantage installs and activates itself as the current user’s Screen Saver, then opens System Settings → Wallpaper. Test the Screen Saver first; an immediate authenticated Lock Screen can show the system wallpaper until the Screen Saver is active.
 
 ### 🔋 Battery & Energy Saver Intelligence
 - **Battery Saver Mode**: Automatically reduces canvas cadence and video playback speed when running on battery power to conserve energy.

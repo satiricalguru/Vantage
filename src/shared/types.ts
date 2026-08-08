@@ -29,7 +29,6 @@ export interface DisplayInfo {
 export interface AppSettings {
   openAtLogin: boolean
   showInDock: boolean
-  showOnLockScreen: boolean
   maxCacheSizeGb: number
   theme: string
 }
@@ -46,7 +45,6 @@ export const DEFAULT_WALLPAPER_ID = 'wallpaperx-v8'
 /** Settings keys that the renderer is allowed to write via IPC */
 export const ALLOWED_SETTINGS_KEYS: ReadonlySet<string> = new Set([
   'showInDock',
-  'showOnLockScreen',
   'maxCacheSizeGb',
   'theme',
   'openAtLogin'

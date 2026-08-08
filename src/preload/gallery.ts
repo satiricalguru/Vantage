@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('galleryApi', {
   getDisplays: () => ipcRenderer.invoke('display:list'),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   setSettings: (partial: Partial<AppSettings>) => ipcRenderer.invoke('settings:set', partial),
+  setupScreenSaver: () => ipcRenderer.invoke('screen-saver:setup'),
   setPerformanceMode: (displayId: number, mode: string) =>
     ipcRenderer.invoke('performance:set-mode', { displayId, mode }),
   importFile: () => ipcRenderer.invoke('import:file'),

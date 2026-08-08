@@ -12,6 +12,9 @@ import { syncStaticWallpapers, getStaticSourceDirs } from './staticLibrary'
 import store from './store'
 import { ALLOWED_SETTINGS_KEYS, DEFAULT_WALLPAPER_ID, WallpaperItem } from '../shared/types'
 import { toMediaUrl } from './mediaUrl'
+import { installVantageScreenSaver, setupVantageScreenSaver, syncSelectedScreenSaverVideo } from './screenSaver'
+
+import { generateVideoThumbnail } from './thumbnailGenerator'
 
 // Register media:// custom protocol for local video & asset streaming
 protocol.registerSchemesAsPrivileged([
@@ -90,7 +93,7 @@ function watchStaticLibrary(): void {
   }
 }
 
-function scanVantageWallpapersFolder(): number {
+async function scanVantageWallpapersFolder(): Promise<number> {
   const targetDir = getVantageWallpapersFolder()
   let addedCount = 0
   const presentIds: string[] = []
@@ -111,12 +114,21 @@ function scanVantageWallpapersFolder(): number {
         const isVideo = ['.mp4', '.mov', '.webm'].includes(ext)
         const id = `user-folder-${file.replace(/[^a-zA-Z0-9_-]/g, '_')}`
         presentIds.push(id)
+
+        let previewPath = filePath
+        if (isVideo) {
+          const thumbPath = await generateVideoThumbnail(filePath)
+          if (thumbPath) {
+            previewPath = thumbPath
+          }
+        }
+
         const newItem = {
           id,
           title: file.replace(/\.[^/.]+$/, ''),
           category: 'imported' as const,
           type: isVideo ? 'video' : 'user-import',
-          previewUrl: toMediaUrl(filePath),
+          previewUrl: toMediaUrl(previewPath),
           sourceUrl: toMediaUrl(filePath),
           resolution: { width: 3840, height: 2160 },
           source: 'user' as const,
@@ -300,6 +312,7 @@ function registerIpcHandlers(): void {
     if (!getWallpaperById(wallpaperId)) throw new Error('Wallpaper does not exist')
     setDisplayAssignment(String(displayId), wallpaperId)
     applyWallpaperToDisplay(displayId, wallpaperId)
+    syncSelectedScreenSaverVideo()
     return true
   })
 
@@ -334,7 +347,6 @@ function registerIpcHandlers(): void {
     return {
       openAtLogin: app.getLoginItemSettings().openAtLogin,
       showInDock: store.get('showInDock', false),
-      showOnLockScreen: store.get('showOnLockScreen', true),
       maxCacheSizeGb: store.get('maxCacheSizeGb', 5),
       theme: store.get('theme', 'dark')
     }
@@ -353,7 +365,7 @@ function registerIpcHandlers(): void {
       if (!ALLOWED_SETTINGS_KEYS.has(key)) {
         throw new Error(`Setting is not writable: ${key}`)
       }
-      if (['showInDock', 'showOnLockScreen', 'openAtLogin'].includes(key) && typeof val !== 'boolean') {
+      if (['showInDock', 'openAtLogin'].includes(key) && typeof val !== 'boolean') {
         throw new Error(`Setting ${key} must be boolean`)
       }
       if (key === 'theme' && val !== 'dark') throw new Error('Unsupported theme')
@@ -438,6 +450,14 @@ function registerIpcHandlers(): void {
       return null
     }
 
+    let previewPath = targetPath
+    if (isVideo) {
+      const generatedThumb = await generateVideoThumbnail(targetPath)
+      if (generatedThumb) {
+        previewPath = generatedThumb
+      }
+    }
+
     const id = `user-folder-${filename.replace(/[^a-zA-Z0-9_-]/g, '_')}`
     const existing = getWallpaperById(id)
     const newItem = {
@@ -445,7 +465,7 @@ function registerIpcHandlers(): void {
       title: filename.replace(/\.[^/.]+$/, ''),
       category: 'imported' as const,
       type: isVideo ? 'video' : 'user-import',
-      previewUrl: toMediaUrl(targetPath),
+      previewUrl: toMediaUrl(previewPath),
       sourceUrl: toMediaUrl(targetPath),
       resolution: { width: 3840, height: 2160 },
       source: 'user' as const,
@@ -473,7 +493,15 @@ function registerIpcHandlers(): void {
     if (!isAllowedRemoteMediaUrl(url)) {
       return Promise.reject(new Error('Refusing to cache an untrusted media URL'))
     }
-    return ensureCached(url)
+    return ensureCached(url).then((cachedPath) => {
+      syncSelectedScreenSaverVideo()
+      return cachedPath
+    })
+  })
+
+  ipcMain.handle('screen-saver:setup', async (event) => {
+    requireTrustedIpcSender(event)
+    return setupVantageScreenSaver()
   })
 
   onCacheProgress((progress) => {
@@ -706,6 +734,9 @@ app.whenReady().then(() => {
   setupDisplayListeners()
   syncWallpaperWindows()
   initPowerManager()
+  void installVantageScreenSaver()
+    .then(() => syncSelectedScreenSaverVideo())
+    .catch((err) => console.warn('[ScreenSaver] Native module unavailable:', err))
   setCacheLimitBytes((store.get('maxCacheSizeGb', 5) as number) * 1024 * 1024 * 1024)
   evictToLimit(getCacheLimitBytes())
   registerIpcHandlers()

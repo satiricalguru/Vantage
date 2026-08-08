@@ -7,10 +7,11 @@
   "homepage": "https://github.com/satiricalguru/Vantage",
   "scripts": {
     "dev": "electron-vite dev",
-    "build": "electron-vite build",
+    "build": "electron-vite build && npm run build:screen-saver",
+    "build:screen-saver": "node scripts/build-screen-saver.mjs",
     "postinstall": "electron-builder install-app-deps",
-    "pack": "electron-vite build && electron-builder --dir",
-    "dist": "electron-vite build && electron-builder"
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder"
   },
   "dependencies": {
     "@electron-toolkit/utils": "^3.0.0",
@@ -75,6 +76,10 @@
           "V295.mp4",
           "Papers/**/*"
         ]
+      },
+      {
+        "from": "build/screen-saver/Vantage.saver",
+        "to": "Vantage.saver"
       }
     ],
     "directories": {

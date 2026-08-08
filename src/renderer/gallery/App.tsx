@@ -36,6 +36,7 @@ declare global {
       getDisplays: () => Promise<DisplayInfo[]>
       getSettings: () => Promise<AppSettings>
       setSettings: (partial: Partial<AppSettings>) => Promise<boolean>
+      setupScreenSaver: () => Promise<{ path: string }>
       setPerformanceMode: (displayId: number, mode: string) => Promise<boolean>
       importFile: () => Promise<WallpaperItem | null>
       openFolder: () => Promise<string>

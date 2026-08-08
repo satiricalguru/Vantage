@@ -152,27 +152,6 @@ export function broadcastCacheProgress(progress: {
   }
 }
 
-export function setLockScreenMode(isLocked: boolean): void {
-  for (const win of wallpaperWindows.values()) {
-    if (win.isDestroyed()) continue
-    if (isLocked) {
-      win.setAlwaysOnTop(true, 'screen-saver')
-      win.setVisibleOnAllWorkspaces(true, {
-        visibleOnFullScreen: true,
-        skipTransformProcessType: true
-      })
-      win.showInactive()
-    } else {
-      win.setAlwaysOnTop(false)
-      win.setVisibleOnAllWorkspaces(true, {
-        visibleOnFullScreen: true,
-        skipTransformProcessType: true
-      })
-      win.showInactive()
-    }
-  }
-}
-
 export function setupDisplayListeners(): void {
   screen.on('display-added', syncWallpaperWindows)
   screen.on('display-removed', syncWallpaperWindows)
