@@ -12,6 +12,7 @@
 
   <p>
     <a href="#-key-features">Key Features</a> •
+    <a href="#-screenshots">Screenshots</a> •
     <a href="#-technical-architecture">Architecture</a> •
     <a href="#-performance--battery-intelligence">Performance</a> •
     <a href="#-tech-stack">Tech Stack</a> •
@@ -27,6 +28,39 @@
 **Vantage** is a free, open-source, ultra-performance native live wallpaper application engineered specifically for macOS. Built with high-efficiency streaming protocols and direct macOS Desktop level window hooks (`kCGDesktopWindowLevel`), Vantage transforms your desktop into a fluid canvas without sacrificing performance or battery life.
 
 Whether you want crisp high-resolution video loops, interactive particle physics, AI-generated ambient wallpapers, or local imports, Vantage delivers a seamless visual experience across single and multi-monitor setups. Optional remote-source adapters are kept behind the main-process network boundary.
+
+---
+
+## 📸 Screenshots
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="assets/screenshots/gallery.png" alt="Wallpaper Gallery" width="420" />
+        <br />
+        <sub><b>Wallpaper Gallery</b></sub>
+      </td>
+      <td align="center">
+        <img src="assets/screenshots/settings.png" alt="Settings & Preferences" width="420" />
+        <br />
+        <sub><b>Settings & Preferences</b></sub>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="assets/screenshots/tray.png" alt="Menu Bar Tray Controls" width="420" />
+        <br />
+        <sub><b>Menu Bar Tray Controls</b></sub>
+      </td>
+      <td align="center">
+        <img src="assets/screenshots/screensaver.png" alt="Lock Screen & Screen Saver" width="420" />
+        <br />
+        <sub><b>Lock Screen & Screen Saver</b></sub>
+      </td>
+    </tr>
+  </table>
+</div>
 
 ---
 
