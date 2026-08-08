@@ -40,24 +40,24 @@ Whether you want crisp high-resolution video loops, interactive particle physics
       <td align="center">
         <img src="assets/screenshots/gallery.png" alt="Wallpaper Gallery" width="420" />
         <br />
-        <sub><b>Wallpaper Gallery</b></sub>
+        <sub><b>All Wallpapers Gallery</b></sub>
       </td>
       <td align="center">
-        <img src="assets/screenshots/settings.png" alt="Settings & Preferences" width="420" />
+        <img src="assets/screenshots/my-imports.png" alt="My Imports & Custom Wallpapers" width="420" />
         <br />
-        <sub><b>Settings & Preferences</b></sub>
+        <sub><b>My Imports & Delete Controls</b></sub>
       </td>
     </tr>
     <tr>
       <td align="center">
-        <img src="assets/screenshots/tray.png" alt="Menu Bar Tray Controls" width="420" />
+        <img src="assets/screenshots/preferences.png" alt="Preferences & Energy Controls" width="420" />
         <br />
-        <sub><b>Menu Bar Tray Controls</b></sub>
+        <sub><b>Preferences & Energy Management</b></sub>
       </td>
       <td align="center">
-        <img src="assets/screenshots/screensaver.png" alt="Lock Screen & Screen Saver" width="420" />
+        <img src="assets/screenshots/credits.png" alt="Sources & Credits" width="420" />
         <br />
-        <sub><b>Lock Screen & Screen Saver</b></sub>
+        <sub><b>Content Sources & Licensing Framework</b></sub>
       </td>
     </tr>
   </table>
