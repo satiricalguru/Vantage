@@ -1,8 +1,9 @@
 import { app, BrowserWindow, ipcMain, dialog, screen, shell, protocol } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { Readable } from 'node:stream'
-import { initDatabase, getAllWallpapers, getWallpaperById, setDisplayAssignment, getDisplayAssignment, setPerformanceMode, toggleFavoriteInDb, addWallpaperToDb, pruneUserFolderEntries, closeDatabase } from './db'
+import { initDatabase, getAllWallpapers, getWallpaperById, setDisplayAssignment, getDisplayAssignment, setPerformanceMode, toggleFavoriteInDb, deleteWallpaperFromDb, addWallpaperToDb, pruneUserFolderEntries, closeDatabase } from './db'
 import { syncWallpaperWindows, applyWallpaperToDisplay, setPerformanceModeForDisplay, setupDisplayListeners, getGlobalPlaybackState, setGalleryWindowGetter, broadcastCacheProgress } from './wallpaperWindow'
 import { createTray } from './tray'
 import { initPowerManager } from './powerManager'
@@ -357,6 +358,42 @@ function registerIpcHandlers(): void {
     }
     if (!getWallpaperById(wallpaperId)) throw new Error('Wallpaper does not exist')
     toggleFavoriteInDb(wallpaperId, isFavorite)
+    return true
+  })
+
+  ipcMain.handle('wallpaper:delete', (event, payload) => {
+    requireTrustedIpcSender(event)
+    const { wallpaperId } = payload && typeof payload === 'object' ? payload : {}
+    if (typeof wallpaperId !== 'string') {
+      throw new Error('Invalid delete request')
+    }
+    const item = getWallpaperById(wallpaperId)
+    if (!item) throw new Error('Wallpaper does not exist')
+
+    // Delete DB record & reset assignments if needed
+    deleteWallpaperFromDb(wallpaperId)
+
+    // Helper to safely delete local physical files if present
+    const safelyDeleteFile = (urlOrPath: string) => {
+      try {
+        let localPath = urlOrPath
+        if (localPath.startsWith('file://')) {
+          localPath = fileURLToPath(localPath)
+        } else if (localPath.startsWith('media://')) {
+          localPath = decodeURIComponent(localPath.replace('media://', ''))
+        }
+        if (fs.existsSync(localPath)) {
+          fs.unlinkSync(localPath)
+        }
+      } catch (err) {
+        console.warn('[DB] Could not delete physical file:', urlOrPath, err)
+      }
+    }
+
+    if (item.sourceUrl) safelyDeleteFile(item.sourceUrl)
+    if (item.previewUrl && item.previewUrl !== item.sourceUrl) safelyDeleteFile(item.previewUrl)
+
+    notifyCatalogChanged()
     return true
   })
 

@@ -332,6 +332,20 @@ export function toggleFavoriteInDb(wallpaperId: string, isFavorite: boolean): vo
   database.prepare('UPDATE wallpapers SET is_favorite = ? WHERE id = ?').run(isFavorite ? 1 : 0, wallpaperId)
 }
 
+export function deleteWallpaperFromDb(wallpaperId: string): boolean {
+  const database = initDatabase()
+  try {
+    database.transaction(() => {
+      database.prepare('UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id = ?').run(DEFAULT_WALLPAPER_ID, wallpaperId)
+      database.prepare('DELETE FROM wallpapers WHERE id = ?').run(wallpaperId)
+    })()
+    return true
+  } catch (err) {
+    console.error('[DB] Error deleting wallpaper from database:', err)
+    return false
+  }
+}
+
 export function addWallpaperToDb(item: WallpaperItem): void {
   const database = initDatabase()
   database.prepare(`

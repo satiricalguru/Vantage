@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useGalleryStore, WallpaperItem } from '../store/useGalleryStore'
 import { ApertureIrisIcon } from '../components/ApertureIrisIcon'
-import { Play, Sparkles, Heart } from 'lucide-react'
+import { Play, Sparkles, Heart, Trash2 } from 'lucide-react'
 
 interface WallpaperTileProps {
   item: WallpaperItem
@@ -115,7 +115,8 @@ const WallpaperTile: React.FC<WallpaperTileProps> = ({ item, onSelect }) => {
   const [isHovered, setIsHovered] = useState(false)
   const [hasImageError, setHasImageError] = useState(false)
   const [hasVideoError, setHasVideoError] = useState(false)
-  const { toggleFavorite } = useGalleryStore()
+  const { activeCategory, toggleFavorite, deleteWallpaper } = useGalleryStore()
+  const isImportedCategory = activeCategory === 'imported'
 
   return (
     <div
@@ -194,19 +195,35 @@ const WallpaperTile: React.FC<WallpaperTileProps> = ({ item, onSelect }) => {
           )}
         </div>
 
-        {/* Favorite Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            toggleFavorite(item.id, item.is_favorite)
-          }}
-          aria-label={item.is_favorite ? `Remove ${item.title} from favorites` : `Add ${item.title} to favorites`}
-          className="absolute top-2 right-2 z-10 p-1.5 rounded-lg bg-black/60 backdrop-blur-md text-ink-dim hover:text-rose-400 transition"
-        >
-          <Heart
-            className={`w-3.5 h-3.5 ${item.is_favorite ? 'fill-rose-400 text-rose-400' : ''}`}
-          />
-        </button>
+        {/* Action Buttons: Delete (only in My Imports) & Favorite */}
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
+          {isImportedCategory && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                deleteWallpaper(item.id)
+              }}
+              aria-label={`Delete ${item.title}`}
+              title="Delete imported wallpaper"
+              className="p-1.5 rounded-lg bg-black/60 backdrop-blur-md text-ink-dim hover:text-rose-400 hover:bg-rose-500/20 transition"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleFavorite(item.id, item.is_favorite)
+            }}
+            aria-label={item.is_favorite ? `Remove ${item.title} from favorites` : `Add ${item.title} to favorites`}
+            className="p-1.5 rounded-lg bg-black/60 backdrop-blur-md text-ink-dim hover:text-rose-400 transition"
+          >
+            <Heart
+              className={`w-3.5 h-3.5 ${item.is_favorite ? 'fill-rose-400 text-rose-400' : ''}`}
+            />
+          </button>
+        </div>
 
         {/* Hover Active Iris Indicator */}
         <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition z-10">

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useGalleryStore, WallpaperItem } from '../store/useGalleryStore'
 import { ApertureIrisIcon } from '../components/ApertureIrisIcon'
-import { X, Heart, Monitor, Check } from 'lucide-react'
+import { X, Heart, Monitor, Check, Trash2 } from 'lucide-react'
 
 interface ItemDetailProps {
   item: WallpaperItem
@@ -9,7 +9,8 @@ interface ItemDetailProps {
 }
 
 export const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
-  const { displays, applyWallpaper, toggleFavorite } = useGalleryStore()
+  const { activeCategory, displays, applyWallpaper, toggleFavorite, deleteWallpaper } = useGalleryStore()
+  const isImportedCategory = activeCategory === 'imported'
 
   // M-9 FIX: Close modal on Escape key
   useEffect(() => {
@@ -73,16 +74,30 @@ export const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
                   <span className="font-mono text-[10px] text-ink-dim uppercase">{item.category}</span>
                 </div>
               </div>
-              <button
-                onClick={() => toggleFavorite(item.id, item.is_favorite)}
-                className={`p-2 rounded-lg border transition ${
-                  item.is_favorite
-                    ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-                    : 'border-line text-ink-dim hover:text-ink hover:border-ink-dim'
-                }`}
-              >
-                <Heart className={`w-4 h-4 ${item.is_favorite ? 'fill-rose-400' : ''}`} />
-              </button>
+              <div className="flex items-center gap-2">
+                {isImportedCategory && (
+                  <button
+                    onClick={() => {
+                      deleteWallpaper(item.id)
+                      onClose()
+                    }}
+                    title="Delete wallpaper"
+                    className="p-2 rounded-lg border border-line text-ink-dim hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10 transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  onClick={() => toggleFavorite(item.id, item.is_favorite)}
+                  className={`p-2 rounded-lg border transition ${
+                    item.is_favorite
+                      ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                      : 'border-line text-ink-dim hover:text-ink hover:border-ink-dim'
+                  }`}
+                >
+                  <Heart className={`w-4 h-4 ${item.is_favorite ? 'fill-rose-400' : ''}`} />
+                </button>
+              </div>
             </div>
 
             {/* Display assignment buttons */}

@@ -24,6 +24,7 @@ interface GalleryStore {
   fetchDisplays: () => Promise<void>
   applyWallpaper: (displayId: number, wallpaperId: string) => Promise<void>
   toggleFavorite: (wallpaperId: string, currentFav?: boolean) => Promise<void>
+  deleteWallpaper: (wallpaperId: string) => Promise<void>
   importFile: () => Promise<void>
   openWallpaperFolder: () => Promise<void>
 }
@@ -126,6 +127,20 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
         }
       } catch (error) {
         set({ error: error instanceof Error ? error.message : 'Unable to update favorite.' })
+      }
+    }
+  },
+
+  deleteWallpaper: async (wallpaperId) => {
+    if (window.galleryApi) {
+      try {
+        await window.galleryApi.deleteWallpaper(wallpaperId)
+        if (get().selectedWallpaper?.id === wallpaperId) {
+          set({ selectedWallpaper: null })
+        }
+        await get().fetchWallpapers()
+      } catch (error) {
+        set({ error: error instanceof Error ? error.message : 'Unable to delete wallpaper.' })
       }
     }
   },

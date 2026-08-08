@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld('galleryApi', {
     ipcRenderer.invoke('wallpaper:apply-to-display', { displayId, wallpaperId }),
   toggleFavorite: (wallpaperId: string, isFavorite: boolean) =>
     ipcRenderer.invoke('wallpaper:favorite', { wallpaperId, isFavorite }),
+  deleteWallpaper: (wallpaperId: string) =>
+    ipcRenderer.invoke('wallpaper:delete', { wallpaperId }),
   getDisplays: () => ipcRenderer.invoke('display:list'),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   setSettings: (partial: Partial<AppSettings>) => ipcRenderer.invoke('settings:set', partial),
