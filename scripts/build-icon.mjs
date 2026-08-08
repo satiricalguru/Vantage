@@ -19,30 +19,41 @@ if (!fs.existsSync(svgIcon)) {
 if (!fs.existsSync(buildDir)) fs.mkdirSync(buildDir, { recursive: true })
 if (!fs.existsSync(resourcesIconsDir)) fs.mkdirSync(resourcesIconsDir, { recursive: true })
 
-const tmpPng = path.join(buildDir, 'tmp_transparent_icon.png')
+const tmpPng = path.join(buildDir, 'tmp_native_transparent_icon.png')
 
 const swiftScript = `
 import AppKit
-import WebKit
 
-let app = NSApplication.shared
-class Delegate: NSObject, WKNavigationDelegate {
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        webView.takeSnapshot(with: nil) { img, err in
-            if let img = img, let rep = NSBitmapImageRep(data: img.tiffRepresentation!), let png = rep.representation(using: .png, properties: [:]) {
-                try? png.write(to: URL(fileURLWithPath: "${tmpPng}"))
-            }
-            exit(0)
-        }
+let url = URL(fileURLWithPath: "${svgIcon}")
+if let image = NSImage(contentsOf: url) {
+    let targetSize = NSSize(width: 1024, height: 1024)
+    let rep = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: Int(targetSize.width),
+        pixelsHigh: Int(targetSize.height),
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .calibratedRGB,
+        bytesPerRow: 0,
+        bitsPerPixel: 0
+    )!
+    
+    rep.size = targetSize
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+    
+    NSColor.clear.set()
+    NSRect(origin: .zero, size: targetSize).fill()
+    
+    image.draw(in: NSRect(origin: .zero, size: targetSize), from: .zero, operation: .sourceOver, fraction: 1.0)
+    NSGraphicsContext.restoreGraphicsState()
+    
+    if let pngData = rep.representation(using: .png, properties: [:]) {
+        try? pngData.write(to: URL(fileURLWithPath: "${tmpPng}"))
     }
 }
-let del = Delegate()
-let web = WKWebView(frame: NSRect(x: 0, y: 0, width: 1024, height: 1024))
-web.setValue(false, forKey: "drawsBackground")
-web.navigationDelegate = del
-let html = "<!DOCTYPE html><html><body style=\\"margin:0;padding:0;background:transparent;overflow:hidden;\\"><img src=\\"file://${svgIcon}\\" style=\\"width:1024px;height:1024px;\\" /></body></html>"
-web.loadHTMLString(html, baseURL: URL(fileURLWithPath: "${root}"))
-app.run()
 `
 
 const tempSwiftFile = path.join(buildDir, 'render_icon.swift')
@@ -51,7 +62,7 @@ fs.writeFileSync(tempSwiftFile, swiftScript, 'utf8')
 try {
   execFileSync('swift', [tempSwiftFile], { stdio: 'ignore' })
 } catch (err) {
-  console.warn('[BuildIcon] Swift WebKit rendering failed:', err)
+  console.warn('[BuildIcon] Native Swift NSImage SVG rendering failed:', err)
 } finally {
   if (fs.existsSync(tempSwiftFile)) fs.rmSync(tempSwiftFile, { force: true })
 }
@@ -85,5 +96,5 @@ if (fs.existsSync(tmpPng) && fs.statSync(tmpPng).size > 0) {
   execFileSync('iconutil', ['-c', 'icns', iconsetDir, '-o', icnsTarget], { stdio: 'ignore' })
   fs.rmSync(iconsetDir, { recursive: true, force: true })
   fs.rmSync(tmpPng, { force: true })
-  console.log('[BuildIcon] Successfully generated transparent PNG & ICNS app icons!')
+  console.log('[BuildIcon] Successfully generated crisp transparent PNG & ICNS app icons!')
 }
