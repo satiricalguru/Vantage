@@ -6,8 +6,9 @@
   "author": "Vantage Team",
   "homepage": "https://github.com/satiricalguru/Vantage",
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build && npm run build:screen-saver",
+    "dev": "node scripts/build-icon.mjs && electron-vite dev",
+    "build": "node scripts/build-icon.mjs && electron-vite build && npm run build:screen-saver",
+    "build:icon": "node scripts/build-icon.mjs",
     "build:screen-saver": "node scripts/build-screen-saver.mjs",
     "postinstall": "electron-builder install-app-deps",
     "pack": "npm run build && electron-builder --dir",
@@ -45,7 +46,9 @@
   "build": {
     "appId": "com.vantage.app",
     "productName": "Vantage",
+    "icon": "build/icon.png",
     "mac": {
+      "icon": "build/icon.icns",
       "category": "public.app-category.utilities",
       "identity": null,
       "target": [

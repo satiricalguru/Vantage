@@ -234,6 +234,24 @@ if (!gotTheLock) {
   })
 }
 
+function getAppIconPath(): string | undefined {
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'icons', 'icon.png')
+    : path.join(app.getAppPath(), 'resources', 'icons', 'icon.png')
+  return fs.existsSync(iconPath) ? iconPath : undefined
+}
+
+function setupDockIcon(): void {
+  const iconPath = getAppIconPath()
+  if (iconPath && process.platform === 'darwin' && app.dock) {
+    try {
+      app.dock.setIcon(iconPath)
+    } catch (err) {
+      console.warn('[AppIcon] Could not set dock icon:', err)
+    }
+  }
+}
+
 function createGalleryWindow(): BrowserWindow {
   if (galleryWindow && !galleryWindow.isDestroyed()) {
     if (galleryWindow.isMinimized()) galleryWindow.restore()
@@ -242,12 +260,14 @@ function createGalleryWindow(): BrowserWindow {
     return galleryWindow
   }
 
+  const iconPath = getAppIconPath()
   galleryWindow = new BrowserWindow({
     width: 1040,
     height: 720,
     minWidth: 840,
     minHeight: 580,
     title: 'Vantage',
+    icon: iconPath,
     show: false,
     frame: false,
     titleBarStyle: 'hiddenInset',
@@ -718,6 +738,7 @@ app.whenReady().then(() => {
     }
   })
 
+  setupDockIcon()
   const showInDock = store.get('showInDock', false)
   if (app.dock && !showInDock) {
     app.dock.hide()
