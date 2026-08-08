@@ -5,8 +5,50 @@ import type { WallpaperItem } from '../shared/types'
 import { addWallpaperToDb, pruneStaticWallpapers, getWallpaperById } from './db'
 import { toMediaUrl } from './mediaUrl'
 import { getMediaDimensions } from './mediaInfo'
+import { INITIAL_WALLPAPERS } from './contentSources'
 
 const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp']
+
+const SPECIAL_WORDS: Record<string, string> = {
+  '2b': '2B',
+  '3b': '3B',
+  '9s': '9S',
+  'a2': 'A2',
+  'jjk': 'JJK',
+  'lol': 'LoL',
+  'hsr': 'HSR',
+  'zzz': 'ZZZ',
+  'bmw': 'BMW',
+  'ae86': 'AE86'
+}
+
+function formatStaticTitle(base: string): string {
+  // 1. Try matching with initial catalog wallpapers
+  const catalogItem = INITIAL_WALLPAPERS.find(
+    (w) => w.id === base || w.id === `motionbgs-${base}` || w.id === `wallpaperx-${base}`
+  )
+  if (catalogItem && catalogItem.title) {
+    return catalogItem.title
+  }
+
+  // 2. Clean prefix & separators
+  let cleaned = base
+    .replace(/^(motionbgs|wallpaperx|local|user)[-_]/i, '')
+    .replace(/[-_]+/g, ' ')
+    .trim()
+
+  if (!cleaned) return base
+
+  // 3. Capitalize words cleanly
+  return cleaned
+    .split(' ')
+    .map((word) => {
+      const lower = word.toLowerCase()
+      if (SPECIAL_WORDS[lower]) return SPECIAL_WORDS[lower]
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    })
+    .join(' ')
+}
 
 interface ScannedImage {
   filePath: string
@@ -100,7 +142,8 @@ export async function buildStaticManifest(): Promise<StaticManifest> {
       if (seen.has(id)) continue
       seen.add(id)
       presentIds.push(id)
-      tasks.push({ filePath: entry.filePath, id, base, license, attribution })
+      const formattedTitle = formatStaticTitle(base)
+      tasks.push({ filePath: entry.filePath, id, base: formattedTitle, license, attribution })
     }
   }
 
