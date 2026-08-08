@@ -198,10 +198,16 @@ Vantage offers 3 distinct performance tiers to balance visuals with energy effic
 
 ### Installation
 
-1. Download the latest `.dmg` release from the [Releases](https://github.com/satiricalguru/Vantage/releases) page.
-2. Open the downloaded `Vantage-1.0.0.dmg` file.
-3. Drag **Vantage** into your `Applications` folder.
-4. Launch Vantage and enjoy live wallpapers!
+1. Download the latest `.dmg` release for your Mac architecture from [Releases](https://github.com/satiricalguru/Vantage/releases):
+   - 🍏 **Apple Silicon (M1/M2/M3/M4):** `Vantage-1.0.0-arm64.dmg`
+   - 💻 **Intel (x86_64):** `Vantage-1.0.0-x64.dmg`
+2. Open the downloaded `.dmg` file and drag **Vantage** into your `Applications` folder.
+3. **If macOS shows `"Vantage is damaged and can't be opened"`**:
+   This occurs because macOS Gatekeeper quarantines open-source apps downloaded via web browsers. Run this single command in **Terminal**:
+   ```bash
+   xattr -cr /Applications/Vantage.app
+   ```
+4. Launch Vantage from your Applications folder and enjoy live wallpapers!
 
 ---
 

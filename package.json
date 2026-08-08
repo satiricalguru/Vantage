@@ -56,7 +56,13 @@
       "category": "public.app-category.utilities",
       "identity": null,
       "target": [
-        "dmg"
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
       ],
       "extendInfo": {
         "LSUIElement": true
