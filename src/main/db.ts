@@ -239,9 +239,9 @@ export function getAllWallpapers(category?: string, query?: string): WallpaperIt
     category !== 'imported'
 
   if (isCategorySection || category === 'static') {
-    sql += ' ORDER BY title COLLATE NOCASE ASC'
+    sql += " ORDER BY (CASE WHEN source = 'user' OR category = 'imported' OR id LIKE 'user-%' THEN 0 ELSE 1 END) ASC, title COLLATE NOCASE ASC"
   } else {
-    sql += ' ORDER BY added_at DESC'
+    sql += " ORDER BY (CASE WHEN source = 'user' OR category = 'imported' OR id LIKE 'user-%' THEN 0 ELSE 1 END) ASC, added_at DESC"
   }
 
   const rows = database.prepare(sql).all(...params) as WallpaperRow[]
