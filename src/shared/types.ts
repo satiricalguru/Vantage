@@ -2,7 +2,7 @@
 
 export type WallpaperType = 'video' | 'generative' | 'user-import' | 'image' | string
 export type WallpaperCategory = 'all' | 'anime' | 'games' | 'nature' | 'generative' | 'imported' | 'videos' | 'static' | string
-export type WallpaperSource = 'local' | 'custom' | 'user' | 'static' | 'pexels' | 'unsplash' | string
+export type WallpaperSource = 'local' | 'custom' | 'user' | 'static' | string
 export type PerformanceMode = 'quality' | 'balanced' | 'battery-saver' | 'pause' | string
 
 export interface WallpaperItem {
@@ -45,7 +45,7 @@ export interface CacheStatus {
 }
 
 /** The default wallpaper ID used when no assignment exists */
-export const DEFAULT_WALLPAPER_ID = 'motionbgs-celestial-veil'
+export const DEFAULT_WALLPAPER_ID = 'wallpaperx-v8'
 
 /** Settings keys that the renderer is allowed to write via IPC */
 export const ALLOWED_SETTINGS_KEYS: ReadonlySet<string> = new Set([

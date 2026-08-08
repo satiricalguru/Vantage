@@ -11,17 +11,25 @@ const resourcesDir = path.join(contentsDir, 'Resources')
 const binaryPath = path.join(macOsDir, 'VantageScreenSaver')
 const sourcePath = path.join(sourceDir, 'VantageScreenSaver.swift')
 const infoPath = path.join(sourceDir, 'Info.plist')
-const defaultVideoPath = path.join(root, 'Extracted_Video_Wallpapers', 'V8.mp4')
+const defaultVideoCandidates = [
+  path.join(root, 'resources', 'wallpapers', 'V8.mp4'),
+  path.join(root, 'Extracted_Video_Wallpapers', 'V8.mp4')
+]
+const defaultVideoPath = defaultVideoCandidates.find((p) => existsSync(p))
 
 if (process.platform !== 'darwin') {
   console.log('[ScreenSaver] Skipping native .saver build on non-macOS host.')
   process.exit(0)
 }
 
-for (const requiredPath of [sourcePath, infoPath, defaultVideoPath]) {
+for (const requiredPath of [sourcePath, infoPath]) {
   if (!existsSync(requiredPath)) {
     throw new Error(`[ScreenSaver] Required file is missing: ${requiredPath}`)
   }
+}
+if (!defaultVideoPath) {
+  for (const p of defaultVideoCandidates) console.log(`[ScreenSaver] Missing default video candidate: ${p}`)
+  throw new Error(`[ScreenSaver] Required default wallpaper video is missing: ${defaultVideoCandidates.join(' or ')}`)
 }
 
 rmSync(outputDir, { recursive: true, force: true })

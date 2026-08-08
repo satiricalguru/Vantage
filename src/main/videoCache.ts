@@ -11,12 +11,7 @@ const CACHE_DOWNLOAD_TIMEOUT_MS = 2 * 60 * 1000
 const VIDEO_EXTS = new Set(['.mp4', '.webm', '.mov', '.m4v', '.mkv'])
 const ALLOWED_MEDIA_HOSTS = new Set([
   'motionbgs.com',
-  'www.motionbgs.com',
-  'videos.pexels.com',
-  'images.pexels.com',
-  'www.pexels.com',
-  'images.unsplash.com',
-  'plus.unsplash.com'
+  'www.motionbgs.com'
 ])
 
 let cacheLimitBytes = DEFAULT_CACHE_MAX_BYTES

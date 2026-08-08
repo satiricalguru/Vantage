@@ -2,6 +2,7 @@ import { app } from 'electron'
 import { execFile } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
+import crypto from 'node:crypto'
 import { promisify } from 'node:util'
 
 const execFileAsync = promisify(execFile)
@@ -15,6 +16,15 @@ function getThumbnailDir(): string {
 }
 
 /**
+ * Thumbnail file name is derived from a hash of the source path so identical
+ * file names from different folders never collide or overwrite each other.
+ */
+function thumbnailStem(videoPath: string): string {
+  const hash = crypto.createHash('sha1').update(videoPath).digest('hex').slice(0, 16)
+  return `${path.basename(videoPath)}-${hash}`
+}
+
+/**
  * Generates a thumbnail image from the first frame of a video file.
  * Returns the local filesystem path to the generated image file.
  */
@@ -23,9 +33,9 @@ export async function generateVideoThumbnail(videoPath: string): Promise<string 
     return null
   }
 
-  const filename = path.basename(videoPath)
   const thumbDir = getThumbnailDir()
-  const expectedPngName = `${filename}.png`
+  const stem = thumbnailStem(videoPath)
+  const expectedPngName = `${stem}.png`
   const targetThumbPath = path.join(thumbDir, expectedPngName)
 
   if (fs.existsSync(targetThumbPath) && fs.statSync(targetThumbPath).size > 0) {
@@ -36,7 +46,10 @@ export async function generateVideoThumbnail(videoPath: string): Promise<string 
   if (process.platform === 'darwin') {
     try {
       await execFileAsync('/usr/bin/qlmanage', ['-t', '-s', '1280', '-o', thumbDir, videoPath])
-      if (fs.existsSync(targetThumbPath) && fs.statSync(targetThumbPath).size > 0) {
+      // qlmanage writes <basename>.png; normalize to the derived stable name
+      const qlOutput = path.join(thumbDir, `${path.basename(videoPath)}.png`)
+      if (fs.existsSync(qlOutput) && fs.statSync(qlOutput).size > 0) {
+        fs.copyFileSync(qlOutput, targetThumbPath)
         console.log('[ThumbnailGenerator] Generated first frame thumbnail:', targetThumbPath)
         return targetThumbPath
       }
@@ -47,7 +60,7 @@ export async function generateVideoThumbnail(videoPath: string): Promise<string 
 
   // Strategy 2: ffmpeg fallback if available
   try {
-    const jpgTarget = path.join(thumbDir, `${filename}.jpg`)
+    const jpgTarget = path.join(thumbDir, `${stem}.jpg`)
     await execFileAsync('ffmpeg', [
       '-y',
       '-ss', '00:00:00',

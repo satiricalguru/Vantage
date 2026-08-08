@@ -59,9 +59,6 @@ export const Settings: React.FC = () => {
     const updated = { ...settings, ...partial }
     setSettingsState(updated)
     if (window.galleryApi) {
-      if ('openAtLogin' in partial) {
-        await window.galleryApi.setLoginAtLogin(Boolean(partial.openAtLogin))
-      }
       await window.galleryApi.setSettings(partial)
     }
   }
@@ -238,7 +235,7 @@ export const Settings: React.FC = () => {
           <input
             type="range"
             min="1"
-            max="50"
+            max="100"
             step="1"
             value={settings.maxCacheSizeGb}
             onChange={(e) => saveSettingsDebounced({ maxCacheSizeGb: Number(e.target.value) })}

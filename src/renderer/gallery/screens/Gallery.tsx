@@ -230,6 +230,34 @@ const WallpaperTile: React.FC<WallpaperTileProps> = ({ item, onSelect }) => {
   )
 }
 
+const EmptyCategoryState: React.FC<{ category: string }> = ({ category }) => {
+  if (category === 'static') {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-center text-ink-dim space-y-3 px-6">
+        <ApertureIrisIcon className="w-8 h-8 text-glow/60" />
+        <div>
+          <p className="text-sm text-ink">No static wallpapers found yet.</p>
+          <p className="font-mono text-xs text-ink-dim mt-2 max-w-md">
+            Drop image files (JPG, PNG, WebP...) into{' '}
+            <span className="text-glow">~/Pictures/Vantage Wallpapers/Static</span>.
+            This folder is watched automatically — files appear here instantly
+            (use "Open Folder in Finder" on the left to open it).
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-full flex flex-col items-center justify-center text-ink-dim space-y-2">
+      <p className="text-sm text-ink">No wallpapers match your selected format or query.</p>
+      <p className="font-mono text-xs text-ink-dim">
+        Try switching format tabs or selecting another catalog category.
+      </p>
+    </div>
+  )
+}
+
 export const Gallery: React.FC = () => {
   const {
     wallpapers,
@@ -239,7 +267,8 @@ export const Gallery: React.FC = () => {
     searchQuery,
     setSearchQuery,
     formatFilter,
-    setFormatFilter
+    setFormatFilter,
+    activeCategory
   } = useGalleryStore()
 
   const filteredWallpapers = wallpapers.filter((item) => {
@@ -301,12 +330,7 @@ export const Gallery: React.FC = () => {
             <span className="font-mono text-xs text-glow">Loading Library Catalog...</span>
           </div>
         ) : filteredWallpapers.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-ink-dim space-y-2">
-            <p className="text-sm text-ink">No wallpapers match your selected format or query.</p>
-            <p className="font-mono text-xs text-ink-dim">
-              Try switching format tabs or selecting another catalog category.
-            </p>
-          </div>
+          <EmptyCategoryState category={activeCategory} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredWallpapers.map((item) => (

@@ -109,7 +109,6 @@ export function initDatabase(): Database.Database {
 
   const syncCatalog = db!.transaction((items: WallpaperItem[]) => {
     // Purge outdated catalog entries from database that are no longer in INITIAL_WALLPAPERS and not user imported
-    // (remote Pexels/Unsplash results are kept: they are valid live-search items)
     if (items.length > 0) {
       const itemIds = items.map((i) => i.id)
       try {
@@ -120,8 +119,8 @@ export function initDatabase(): Database.Database {
         const insertKept = db!.prepare('INSERT OR IGNORE INTO _kept_ids (id) VALUES (?)')
         for (const id of itemIds) insertKept.run(id)
 
-        db!.prepare(`UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (SELECT id FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT LIKE 'pexels-%' AND id NOT LIKE 'unsplash-%' AND id NOT IN (SELECT id FROM _kept_ids))`).run(DEFAULT_WALLPAPER_ID)
-        db!.prepare(`DELETE FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT LIKE 'pexels-%' AND id NOT LIKE 'unsplash-%' AND id NOT IN (SELECT id FROM _kept_ids)`).run()
+        db!.prepare(`UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (SELECT id FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT IN (SELECT id FROM _kept_ids))`).run(DEFAULT_WALLPAPER_ID)
+        db!.prepare(`DELETE FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT IN (SELECT id FROM _kept_ids)`).run()
       } catch (err) {
         console.warn('[DB Sync] Warning during catalog cleanup:', err)
       }
@@ -171,6 +170,12 @@ function resolveMediaUrl(url: string | undefined | null): string {
       return toMediaUrl(localExtracted)
     }
 
+    // Bundled catalog wallpapers ship under resources/wallpapers
+    const bundledWallpapers = path.join(baseDir, 'resources', 'wallpapers', relPath)
+    if (fs.existsSync(bundledWallpapers)) {
+      return toMediaUrl(bundledWallpapers)
+    }
+
     // Fallback to managed pictures folder (~/Pictures/Vantage Wallpapers/)
     try {
       const picturesDir = app.getPath('pictures')
@@ -188,7 +193,7 @@ function resolveMediaUrl(url: string | undefined | null): string {
       }
     } catch { /* ignore */ }
 
-    return toMediaUrl(localExtracted)
+    return toMediaUrl(bundledWallpapers)
   }
   return url
 }

@@ -35,9 +35,27 @@ export async function getMediaDimensions(filePath: string): Promise<Dimensions> 
           if (width > 0 && height > 0) return { width, height }
         }
 
-        // JPEG: Find SOF marker
+        // JPEG: Find SOF marker (scan a bounded prefix instead of reading the whole file)
         if (buffer.length >= 4 && buffer[0] === 0xff && buffer[1] === 0xd8) {
-          const fullBuf = await fs.promises.readFile(filePath)
+          const scanLimit = 4 * 1024 * 1024
+          const chunks: Buffer[] = [buffer]
+          let scanned = buffer.length
+          const fd2 = await fs.promises.open(filePath, 'r')
+          try {
+            let seek = buffer.length
+            while (seek < scanLimit) {
+              const next = Buffer.alloc(256 * 1024)
+              const { bytesRead } = await fd2.read(next, 0, next.length, seek)
+              if (bytesRead === 0) break
+              chunks.push(next.subarray(0, bytesRead))
+              scanned += bytesRead
+              seek += bytesRead
+              if (scanned >= scanLimit) break
+            }
+          } finally {
+            await fd2.close()
+          }
+          const fullBuf = Buffer.concat(chunks)
           let offset = 2
           while (offset < fullBuf.length - 8) {
             if (fullBuf[offset] !== 0xff) { offset++; continue }

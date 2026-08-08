@@ -9,6 +9,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "dev": "node scripts/build-icon.mjs && electron-vite dev",
     "build": "node scripts/build-icon.mjs && electron-vite build && npm run build:screen-saver",
     "build:icon": "node scripts/build-icon.mjs",
@@ -78,14 +79,8 @@
         "to": "resources/thumbnails"
       },
       {
-        "from": "Extracted_Video_Wallpapers",
-        "to": "Extracted_Video_Wallpapers",
-        "filter": [
-          "V8.mp4",
-          "V233.mp4",
-          "V295.mp4",
-          "Papers/**/*"
-        ]
+        "from": "resources/wallpapers",
+        "to": "resources/wallpapers"
       },
       {
         "from": "build/screen-saver/Vantage.saver",

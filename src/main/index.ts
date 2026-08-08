@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, screen, shell, protocol, safeStorage } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, screen, shell, protocol } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { Readable } from 'node:stream'
@@ -6,12 +6,11 @@ import { initDatabase, getAllWallpapers, getWallpaperById, setDisplayAssignment,
 import { syncWallpaperWindows, applyWallpaperToDisplay, setPerformanceModeForDisplay, setupDisplayListeners, getGlobalPlaybackState, setGalleryWindowGetter, broadcastCacheProgress } from './wallpaperWindow'
 import { createTray } from './tray'
 import { initPowerManager } from './powerManager'
-import { searchRemoteWallpapers } from './remoteSources'
 import { ensureCached, getCacheStatus, clearCache, evictToLimit, setCacheLimitBytes, getCacheDir, isAllowedRemoteMediaUrl, onCacheProgress, getCacheLimitBytes, CACHE_FLOOR_BYTES, CACHE_CEILING_BYTES } from './videoCache'
 import { syncStaticWallpapers, getStaticSourceDirs } from './staticLibrary'
 import store from './store'
 import { INITIAL_WALLPAPERS } from './contentSources'
-import { ALLOWED_SETTINGS_KEYS, DEFAULT_WALLPAPER_ID, WallpaperItem } from '../shared/types'
+import { ALLOWED_SETTINGS_KEYS, DEFAULT_WALLPAPER_ID } from '../shared/types'
 import { toMediaUrl } from './mediaUrl'
 import { installVantageScreenSaver, setupVantageScreenSaver, syncSelectedScreenSaverVideo } from './screenSaver'
 
@@ -42,20 +41,6 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 // store is now imported from ./store (single shared instance)
-const ENCRYPTED_PREFIX = 'enc:v1:'
-
-function decryptSecret(value: string): string {
-  if (!value.startsWith(ENCRYPTED_PREFIX)) return value
-  try {
-    if (safeStorage.isEncryptionAvailable()) {
-      return safeStorage.decryptString(Buffer.from(value.slice(ENCRYPTED_PREFIX.length), 'base64'))
-    }
-  } catch (err) {
-    console.warn('[Settings] Could not decrypt stored secret:', err)
-  }
-  return ''
-}
-
 let galleryWindow: BrowserWindow | null = null
 let isQuitting = false
 
@@ -125,6 +110,13 @@ async function scanVantageWallpapersFolder(): Promise<number> {
   const presentIds: string[] = []
   try {
     const files = await fs.promises.readdir(targetDir)
+    interface ScanTask {
+      file: string
+      id: string
+      filePath: string
+      isVideo: boolean
+    }
+    const tasks: ScanTask[] = []
     for (const file of files) {
       if (file.startsWith('.')) continue
       const ext = path.extname(file).toLowerCase()
@@ -146,6 +138,17 @@ async function scanVantageWallpapersFolder(): Promise<number> {
         const isVideo = ['.mp4', '.mov', '.webm'].includes(ext)
         const id = `user-folder-${file.replace(/[^a-zA-Z0-9_-]/g, '_')}`
         presentIds.push(id)
+        tasks.push({ file, id, filePath, isVideo })
+      }
+    }
+
+    // Thumbnail generation (qlmanage) and dimension probing (mdls) spawn helper
+    // processes; cap concurrency so a large folder does not spawn 50 at once.
+    const CONCURRENCY = 3
+    let cursor = 0
+    const workers = Array.from({ length: Math.min(CONCURRENCY, tasks.length) }, async () => {
+      while (cursor < tasks.length) {
+        const { file, id, filePath, isVideo } = tasks[cursor++]
 
         let previewPath = filePath
         if (isVideo) {
@@ -170,7 +173,9 @@ async function scanVantageWallpapersFolder(): Promise<number> {
         addWallpaperToDb(newItem)
         addedCount++
       }
-    }
+    })
+    await Promise.all(workers)
+
     // Purge DB entries for files that no longer exist in the folder
     pruneUserFolderEntries(presentIds)
   } catch (err) {
@@ -184,26 +189,6 @@ let scanTimer: ReturnType<typeof setTimeout> | null = null
 function notifyCatalogChanged(): void {
   if (galleryWindow && !galleryWindow.isDestroyed()) {
     galleryWindow.webContents.send('catalog:changed')
-  }
-}
-
-async function handleRemoteSearch(
-  provider: 'pexels' | 'unsplash',
-  query: string
-): Promise<{ items: WallpaperItem[]; missingKey: boolean }> {
-  const key = decryptSecret(String(store.get(provider === 'pexels' ? 'pexelsApiKey' : 'unsplashApiKey', '')))
-  if (!key) {
-    return { items: [], missingKey: true }
-  }
-  try {
-    const items = await searchRemoteWallpapers(provider, query, key)
-    for (const item of items) {
-      addWallpaperToDb(item)
-    }
-    return { items, missingKey: false }
-  } catch (err) {
-    console.error(`[RemoteSearch] ${provider} search failed:`, err)
-    return { items: [], missingKey: false }
   }
 }
 
@@ -348,10 +333,6 @@ function registerIpcHandlers(): void {
     if (category !== undefined && typeof category !== 'string') throw new Error('Invalid wallpaper category')
     if (query !== undefined && typeof query !== 'string') throw new Error('Invalid wallpaper query')
     if (typeof query === 'string' && query.length > 200) throw new Error('Wallpaper query is too long')
-    if (category === 'pexels' || category === 'unsplash') {
-      const result = await handleRemoteSearch(category, query || '')
-      return result.items
-    }
     return getAllWallpapers(category, query)
   })
 
@@ -420,7 +401,9 @@ function registerIpcHandlers(): void {
       if (['showInDock', 'openAtLogin'].includes(key) && typeof val !== 'boolean') {
         throw new Error(`Setting ${key} must be boolean`)
       }
-      if (key === 'theme' && val !== 'dark') throw new Error('Unsupported theme')
+      if (key === 'theme' && val !== 'dark' && val !== 'light' && val !== 'system') {
+        throw new Error(`Unsupported theme: ${val}`)
+      }
       if (key === 'maxCacheSizeGb') {
         const gb = Number(val)
         if (!Number.isFinite(gb) || gb < CACHE_FLOOR_BYTES / (1024 ** 3) || gb > CACHE_CEILING_BYTES / (1024 ** 3)) {
@@ -547,7 +530,7 @@ function registerIpcHandlers(): void {
     }
     return ensureCached(url).then((cachedPath) => {
       syncSelectedScreenSaverVideo()
-      return cachedPath
+      return toMediaUrl(cachedPath)
     })
   })
 

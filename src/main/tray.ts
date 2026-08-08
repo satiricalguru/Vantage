@@ -2,6 +2,7 @@ import { Tray, Menu, app, nativeImage } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { getGlobalPlaybackState, setGlobalPlaybackState } from './wallpaperWindow'
+import store from './store'
 
 let tray: Tray | null = null
 let currentOnOpenGallery: (() => void) | null = null
@@ -36,6 +37,11 @@ export function updateTrayMenu(): void {
       checked: app.getLoginItemSettings().openAtLogin,
       click: (menuItem) => {
         app.setLoginItemSettings({ openAtLogin: menuItem.checked })
+        try {
+          store.set('openAtLogin', menuItem.checked)
+        } catch {
+          // store write is best-effort; the OS login item is authoritative
+        }
       }
     },
     { type: 'separator' },

@@ -4,13 +4,6 @@ import { ShieldCheck, CheckCircle2, Globe, Heart } from 'lucide-react'
 export const SourcesAndCredits: React.FC = () => {
   const sources = [
     {
-      name: 'Pexels API',
-      type: 'Photos & Loop Videos',
-      license: 'Pexels License (Free Personal & Commercial Use)',
-      attribution: 'No attribution legally required; author credit shown in detail view.',
-      url: 'https://www.pexels.com/license/'
-    },
-    {
       name: 'NASA Image & Video Library',
       type: 'Space & Cosmic Media',
       license: 'Public Domain / US Government Work',
@@ -23,13 +16,6 @@ export const SourcesAndCredits: React.FC = () => {
       license: '100% Original Code (In-house Engine)',
       attribution: 'Built natively in TypeScript & WebGL.',
       url: '#'
-    },
-    {
-      name: 'Unsplash API',
-      type: 'Curated Photography',
-      license: 'Unsplash API License',
-      attribution: 'Hotlinked per Unsplash API guidelines with mandatory author attribution.',
-      url: 'https://unsplash.com/license'
     },
     {
       name: 'AI Art Pipeline',

@@ -5,12 +5,13 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { promisify } from 'node:util'
 import { getDisplayAssignment, getWallpaperById } from './db'
-import { getCachedFilePath, getCacheDir } from './videoCache'
+import { getCachedFilePath, isAllowedRemoteMediaUrl } from './videoCache'
 import { DEFAULT_WALLPAPER_ID, WallpaperItem } from '../shared/types'
 
 const SCREEN_SAVER_NAME = 'Vantage.saver'
 const SCREEN_SAVER_DATA_DIR_NAME = 'Vantage'
 const SCREEN_SAVER_SELECTION_NAME = 'screen-saver-video.txt'
+const MAX_THUMBNAIL_DOWNLOAD_BYTES = 32 * 1024 * 1024
 const execFileAsync = promisify(execFile)
 
 function bundledScreenSaverPath(): string {
@@ -53,24 +54,37 @@ function isVideoPath(filePath: string): boolean {
 /**
  * Sets the macOS system desktop wallpaper to a local image path via AppleScript.
  * This ensures that when macOS locks (Lock Screen), the wallpaper's thumbnail/image is displayed!
+ * The call is skipped when the image is unchanged to avoid spamming System Events / TCC prompts.
  */
+let lastSystemWallpaperPath: string | null = null
+
 export async function setMacSystemWallpaper(imagePath: string): Promise<boolean> {
   if (process.platform !== 'darwin') return false
   if (!imagePath || !fs.existsSync(imagePath)) {
     console.warn('[SystemWallpaper] Image path does not exist for macOS system wallpaper:', imagePath)
     return false
   }
+  if (lastSystemWallpaperPath === imagePath) {
+    return true
+  }
 
   const safePath = imagePath.replace(/"/g, '\\"')
   const script = `tell application "System Events" to set picture of every desktop to (POSIX file "${safePath}")`
   try {
     await execFileAsync('/usr/bin/osascript', ['-e', script])
+    lastSystemWallpaperPath = imagePath
     console.log('[SystemWallpaper] Updated macOS system desktop wallpaper (Lock Screen background):', imagePath)
     return true
   } catch (err) {
-    console.warn('[SystemWallpaper] Could not set macOS system wallpaper via osascript:', err)
+    console.warn('[SystemWallpaper] Could not set macOS system wallpaper via osascript (grant Automation permission for Vantage in System Settings > Privacy & Security):', err)
     return false
   }
+}
+
+function getScreenSaverAssetDir(): string {
+  const dir = path.join(app.getPath('userData'), 'screen-saver')
+  fs.mkdirSync(dir, { recursive: true })
+  return dir
 }
 
 async function ensureLocalThumbnail(wallpaper: WallpaperItem): Promise<string | null> {
@@ -81,23 +95,44 @@ async function ensureLocalThumbnail(wallpaper: WallpaperItem): Promise<string | 
   if (sourcePath && !isVideoPath(sourcePath)) return sourcePath
 
   if (typeof wallpaper.previewUrl === 'string' && /^https?:\/\//i.test(wallpaper.previewUrl)) {
+    if (!isAllowedRemoteMediaUrl(wallpaper.previewUrl)) {
+      console.warn('[SystemWallpaper] Refusing to download thumbnail from untrusted host:', wallpaper.previewUrl)
+      return null
+    }
     const cleanUrl = wallpaper.previewUrl.split('?')[0]
     const ext = path.extname(cleanUrl) || '.jpg'
     const hash = crypto.createHash('sha1').update(wallpaper.previewUrl).digest('hex')
-    const cachedThumbPath = path.join(getCacheDir(), `thumb-${hash}${ext}`)
+    const cachedThumbPath = path.join(getScreenSaverAssetDir(), `thumb-${hash}${ext}`)
 
     if (fs.existsSync(cachedThumbPath) && fs.statSync(cachedThumbPath).size > 0) {
       return cachedThumbPath
     }
 
     try {
-      const response = await net.fetch(wallpaper.previewUrl)
-      if (response.ok) {
-        const arrayBuffer = await response.arrayBuffer()
-        await fs.promises.mkdir(path.dirname(cachedThumbPath), { recursive: true })
-        await fs.promises.writeFile(cachedThumbPath, Buffer.from(arrayBuffer))
-        return cachedThumbPath
+      const response = await net.fetch(wallpaper.previewUrl, { redirect: 'error' })
+      if (!response.ok || response.body == null) return null
+      const total = Number(response.headers.get('content-length')) || 0
+      if (total > MAX_THUMBNAIL_DOWNLOAD_BYTES) {
+        console.warn('[SystemWallpaper] Remote thumbnail exceeds size limit:', wallpaper.previewUrl)
+        return null
       }
+      const reader = response.body.getReader()
+      const chunks: Uint8Array[] = []
+      let received = 0
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        received += value.byteLength
+        if (received > MAX_THUMBNAIL_DOWNLOAD_BYTES) {
+          await reader.cancel()
+          return null
+        }
+        chunks.push(value)
+      }
+      if (chunks.length === 0) return null
+      const buffer = Buffer.concat(chunks.map((c) => Buffer.from(c)))
+      await fs.promises.writeFile(cachedThumbPath, buffer)
+      return cachedThumbPath
     } catch (err) {
       console.warn('[SystemWallpaper] Failed to download remote thumbnail:', err)
     }
@@ -123,9 +158,18 @@ export async function installVantageScreenSaver(): Promise<string> {
 
 /**
  * Synchronize current active wallpaper for both macOS System Desktop / Lock Screen
- * and the native Vantage Screen Saver module.
+ * and the native Vantage Screen Saver module. Calls are serialized so a burst of
+ * wallpaper changes cannot interleave (last invocation wins).
  */
-export async function syncLockScreenAndSystemWallpaper(): Promise<void> {
+let syncQueue: Promise<void> = Promise.resolve()
+
+export function syncSelectedScreenSaverVideo(): void {
+  syncQueue = syncQueue.then(() => syncLockScreenAndSystemWallpaper()).catch((err) => {
+    console.warn('[ScreenSaver] Sync failed:', err)
+  })
+}
+
+async function syncLockScreenAndSystemWallpaper(): Promise<void> {
   const primaryDisplay = screen.getPrimaryDisplay()
   const assignment = getDisplayAssignment(String(primaryDisplay.id))
   const wallpaper = getWallpaperById(assignment.wallpaperId || DEFAULT_WALLPAPER_ID)
@@ -162,10 +206,6 @@ export async function syncLockScreenAndSystemWallpaper(): Promise<void> {
     }
     console.log('[ScreenSaver] Lock screen media synchronized:', screenSaverMedia)
   }
-}
-
-export function syncSelectedScreenSaverVideo(): void {
-  void syncLockScreenAndSystemWallpaper()
 }
 
 async function activateVantageScreenSaver(installedPath: string): Promise<void> {

@@ -26,8 +26,8 @@ export const App: React.FC = () => {
     downloadUrlRef.current = item.sourceUrl
     try {
       if (window.wallpaperApi) {
-        const cachedPath = await window.wallpaperApi.ensureCached(item.sourceUrl)
-        setPlaySrc(`media://${cachedPath}`)
+        const cachedUrl = await window.wallpaperApi.ensureCached(item.sourceUrl)
+        setPlaySrc(cachedUrl)
       } else {
         setPlaySrc(item.sourceUrl)
       }
