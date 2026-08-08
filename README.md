@@ -71,28 +71,28 @@ Whether you want crisp high-resolution video loops, interactive particle physics
 Vantage is built with a dual-process architecture separating the core system service from the visual wallpaper renderers and configuration gallery:
 
 ```
-                               ┌──────────────────────────────────────────┐
-                               │             macOS System                 │
-                               └────────────────────┬─────────────────────┘
-                                                    │
-                         ┌──────────────────────────┴──────────────────────────┐
-                         │       Electron Main Process (System Service)        │
-                         │                                                     │
-                         │  • SQLite Database (better-sqlite3)                 │
-                         │  • Custom media:// Protocol (HTTP 206 Range Stream) │
-                         │  • Power/Battery Observer                           │
-                         │  • Display Manager (Multi-Monitor IPC)              │
-                         │  • Menu Bar Tray Handler                            │
-                         └───────┬──────────────────────────┬──────────────────┘
-                                 │                          │
-           ┌─────────────────────┴──────────┐     ┌─────────┴─────────────────────┐
-           │   Wallpaper Renderer Window    │     │      Gallery Window UI        │
-           │  (Behind Desktop Icons)        │     │  (React 18 + Tailwind CSS)    │
-           │                                │     │                               │
-           │  • Video Layer (HTML5 Video)   │     │  • Wallpaper Discovery        │
-           │  • AI Particle Canvas Layer    │     │  • Category & Search Filters  │
-           │  • Frameless Desktop Attachment│     │  • Multi-Monitor Assignment   │
-           └────────────────────────────────┘     └───────────────────────────────┘
+                           ┌──────────────────────────┐
+                           │       macOS System       │
+                           └────────────┬─────────────┘
+                                        │
+                  ┌─────────────────────┴─────────────────────┐
+                  │  Electron Main Process (System Service)   │
+                  │                                           │
+                  │ • SQLite Database (better-sqlite3)        │
+                  │ • Custom media:// Stream (HTTP 206 Range) │
+                  │ • Power/Battery & System Observer         │
+                  │ • Display Manager (Multi-Monitor IPC)     │
+                  │ • Menu Bar Tray Handler                   │
+                  └───────┬───────────────────────────┬───────┘
+                          │                           │
+      ┌───────────────────┴──────────┐    ┌───────────┴───────────────────┐
+      │  Wallpaper Renderer Window   │    │       Gallery Window UI       │
+      │    (Behind Desktop Icons)    │    │   (React 18 + Tailwind CSS)   │
+      │                              │    │                               │
+      │ • Video Layer (HTML5 Video)  │    │ • Wallpaper Discovery & Search│
+      │ • AI Particle Canvas Layer   │    │ • Category & Dynamic Filters  │
+      │ • Frameless Desktop Window   │    │ • Multi-Monitor Assignment    │
+      └──────────────────────────────┘    └───────────────────────────────┘
 ```
 
 ---
