@@ -163,6 +163,39 @@ export async function installVantageScreenSaver(): Promise<string> {
  */
 let syncQueue: Promise<void> = Promise.resolve()
 
+/**
+ * Extracts a high-definition 1080p/4K static snapshot frame from a video file using macOS native qlmanage.
+ */
+export async function getHighResVideoFrame(videoPath: string): Promise<string | null> {
+  if (process.platform !== 'darwin' || !fs.existsSync(videoPath)) return null
+
+  try {
+    const hash = crypto.createHash('sha1').update(videoPath).digest('hex')
+    const cacheDir = path.join(app.getPath('userData'), 'highres-frames')
+    fs.mkdirSync(cacheDir, { recursive: true })
+
+    const targetFramePath = path.join(cacheDir, `frame-${hash}.png`)
+    if (fs.existsSync(targetFramePath) && fs.statSync(targetFramePath).size > 0) {
+      return targetFramePath
+    }
+
+    // Use native macOS qlmanage to extract a 1920px HD frame from the video
+    await execFileAsync('/usr/bin/qlmanage', ['-t', '-s', '1920', '-o', cacheDir, videoPath])
+
+    const generatedName = `${path.basename(videoPath)}.png`
+    const generatedPath = path.join(cacheDir, generatedName)
+
+    if (fs.existsSync(generatedPath)) {
+      await fs.promises.rename(generatedPath, targetFramePath)
+      return targetFramePath
+    }
+  } catch (err) {
+    console.warn('[SystemWallpaper] Could not extract high-res video frame via qlmanage:', err)
+  }
+
+  return null
+}
+
 export function syncSelectedScreenSaverVideo(): void {
   syncQueue = syncQueue.then(() => syncLockScreenAndSystemWallpaper()).catch((err) => {
     console.warn('[ScreenSaver] Sync failed:', err)
@@ -188,9 +221,16 @@ async function syncLockScreenAndSystemWallpaper(): Promise<void> {
 
   const thumbnailPath = await ensureLocalThumbnail(wallpaper)
 
-  // 1. Update macOS System Wallpaper so Lock Screen displays the wallpaper image/thumbnail
-  if (thumbnailPath) {
-    await setMacSystemWallpaper(thumbnailPath)
+  let highResFramePath: string | null = null
+  if (videoPath) {
+    highResFramePath = await getHighResVideoFrame(videoPath)
+  }
+
+  const systemWallpaperPath = highResFramePath || thumbnailPath
+
+  // 1. Update macOS System Wallpaper so Lock Screen displays a crisp 1080p/4K wallpaper snapshot
+  if (systemWallpaperPath) {
+    await setMacSystemWallpaper(systemWallpaperPath)
   }
 
   // 2. Export media file to native Screen Saver (live video if cached/local, otherwise thumbnail/image)
