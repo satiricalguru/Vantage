@@ -191,7 +191,8 @@ export const Settings: React.FC = () => {
               <div>
                 <div className="font-semibold text-sm text-ink">{disp.label}</div>
                 <div className="text-xs font-mono text-ink-dim">
-                  Resolution: {disp.bounds.width}×{disp.bounds.height}
+                  Resolution: {Math.round(disp.bounds.width * (disp.scaleFactor || 1))}×{Math.round(disp.bounds.height * (disp.scaleFactor || 1))}
+                  {disp.scaleFactor && disp.scaleFactor > 1 ? ` (${disp.bounds.width}×${disp.bounds.height} @ ${disp.scaleFactor}x Retina)` : ''}
                 </div>
               </div>
 
