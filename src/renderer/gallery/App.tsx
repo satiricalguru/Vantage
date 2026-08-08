@@ -8,7 +8,6 @@ import { ApertureIrisIcon } from './components/ApertureIrisIcon'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import {
   Compass,
-  Film,
   Flame,
   Shield,
   Gamepad2,
@@ -58,7 +57,6 @@ export const App: React.FC = () => {
 
   const categories = [
     { id: 'all', label: 'All Wallpapers', icon: Compass },
-    { id: 'videos', label: 'Live Video Loops', icon: Film },
     { id: 'anime', label: 'Anime World', icon: Flame },
     { id: 'games', label: 'Gaming & Esports', icon: Gamepad2 },
     { id: 'heroes', label: 'Heroes & Comics', icon: Shield },
