@@ -13,6 +13,7 @@
   <p>
     <a href="#-key-features">Key Features</a> •
     <a href="#-screenshots">Screenshots</a> •
+    <a href="#-supported-mac-displays--resolutions">Supported Displays</a> •
     <a href="#-technical-architecture">Architecture</a> •
     <a href="#-performance--battery-intelligence">Performance</a> •
     <a href="#-tech-stack">Tech Stack</a> •
@@ -97,6 +98,36 @@ Whether you want crisp high-resolution video loops, interactive particle physics
 - **Menu Bar Tray Application**: Control playback, change wallpapers, or tweak settings quickly from the macOS menu bar tray.
 - **macOS Vibrancy & Glassmorphism**: Features macOS native `sidebar` vibrancy effects, sleek typography, and fluid Framer Motion animations.
 - **Dock Hiding Option**: Run silently in the background as a menubar utility without cluttering your macOS Dock.
+
+---
+
+## 💻 Supported Mac Displays & Resolutions
+
+Vantage natively scales and adapts live wallpapers across all Apple Silicon (M1/M2/M3/M4/M5) and Intel Mac displays up to 4K/6K Retina resolutions:
+
+### 💻 MacBook Air
+| Model | Screen | Native Resolution |
+| :--- | :---: | :---: |
+| **MacBook Air 11"** (2010–2015) | 11.6" | `1366 × 768` |
+| **MacBook Air 13"** (2010–2017) | 13.3" | `1440 × 900` |
+| **MacBook Air 13" Retina** (2018–2020) | 13.3" | `2560 × 1600` |
+| **MacBook Air M1 13"** (2020) | 13.3" | `2560 × 1600` |
+| **MacBook Air M2 13.6"** (2022–2024) | 13.6" | `2560 × 1664` |
+| **MacBook Air M3 13.6"** | 13.6" | `2560 × 1664` |
+| **MacBook Air M4 13.6"** | 13.6" | `2560 × 1664` |
+| **MacBook Air M2/M3/M4 15.3"** | 15.3" | `2880 × 1864` |
+
+### 💻 MacBook Pro
+| Model | Screen | Native Resolution |
+| :--- | :---: | :---: |
+| **MacBook Pro 13" non-Retina** | 13.3" | `1280 × 800` |
+| **MacBook Pro 13" Retina** | 13.3" | `2560 × 1600` |
+| **MacBook Pro 13" M1/M2** | 13.3" | `2560 × 1600` |
+| **MacBook Pro 14"** (2021–2024) | 14.2" | `3024 × 1964` |
+| **MacBook Pro 14" M4/M5** | 14.2" | `3024 × 1964` |
+| **MacBook Pro 15"** | 15.4" | `2880 × 1800` |
+| **MacBook Pro 16" Retina** | 16.0" | `3072 × 1920` |
+| **MacBook Pro 16" M1/M2/M3/M4** | 16.2" | `3456 × 2234` |
 
 ---
 
