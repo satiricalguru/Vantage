@@ -140,7 +140,7 @@ const WallpaperTile: React.FC<WallpaperTileProps> = ({ item, onSelect }) => {
             <span className="text-[10px] font-mono text-ink-dim uppercase">Live Media Asset</span>
           </div>
         ) : item.type === 'video' ? (
-          isHovered && !hasVideoError ? (
+          isHovered && !hasVideoError && !/^https?:\/\//i.test(item.sourceUrl) ? (
             <video
               src={item.sourceUrl}
               poster={item.previewUrl}
@@ -239,8 +239,7 @@ export const Gallery: React.FC = () => {
     searchQuery,
     setSearchQuery,
     formatFilter,
-    setFormatFilter,
-    activeCategory
+    setFormatFilter
   } = useGalleryStore()
 
   const filteredWallpapers = wallpapers.filter((item) => {

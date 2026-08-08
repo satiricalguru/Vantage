@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog, screen, shell, protocol, safeStora
 import path from 'node:path'
 import fs from 'node:fs'
 import { Readable } from 'node:stream'
-import { initDatabase, getAllWallpapers, getWallpaperById, setDisplayAssignment, getDisplayAssignment, setPerformanceMode, toggleFavoriteInDb, addWallpaperToDb, pruneUserFolderEntries } from './db'
+import { initDatabase, getAllWallpapers, getWallpaperById, setDisplayAssignment, getDisplayAssignment, setPerformanceMode, toggleFavoriteInDb, addWallpaperToDb, pruneUserFolderEntries, closeDatabase } from './db'
 import { syncWallpaperWindows, applyWallpaperToDisplay, setPerformanceModeForDisplay, setupDisplayListeners, getGlobalPlaybackState, setGalleryWindowGetter, broadcastCacheProgress } from './wallpaperWindow'
 import { createTray } from './tray'
 import { initPowerManager } from './powerManager'
@@ -15,6 +15,17 @@ import { toMediaUrl } from './mediaUrl'
 import { installVantageScreenSaver, setupVantageScreenSaver, syncSelectedScreenSaverVideo } from './screenSaver'
 
 import { generateVideoThumbnail } from './thumbnailGenerator'
+import { getMediaDimensions } from './mediaInfo'
+
+// Global safety nets — log diagnostics for truly unexpected failures so they
+// never disappear silently into the void.
+process.on('uncaughtException', (err, origin) => {
+  console.error(`[Fatal] Uncaught exception (${origin}):`, err)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Fatal] Unhandled promise rejection:', reason, promise)
+})
 
 // Register media:// custom protocol for local video & asset streaming
 protocol.registerSchemesAsPrivileged([
@@ -56,10 +67,19 @@ function getVantageWallpapersFolder(): string {
   return targetDir
 }
 
+// Stored watcher handles — closed before re-watching to prevent leaks
+let folderWatcher: fs.FSWatcher | null = null
+const staticWatchers: fs.FSWatcher[] = []
+
 function watchVantageWallpapersFolder(): void {
+  // Close previous watcher if called again (re-watch guard)
+  if (folderWatcher) {
+    folderWatcher.close()
+    folderWatcher = null
+  }
   const targetDir = getVantageWallpapersFolder()
   try {
-    fs.watch(targetDir, (_eventType, filename) => {
+    folderWatcher = fs.watch(targetDir, (_eventType, filename) => {
       if (!filename) return
       if (scanTimer) clearTimeout(scanTimer)
       scanTimer = setTimeout(() => {
@@ -74,11 +94,15 @@ function watchVantageWallpapersFolder(): void {
 }
 
 function watchStaticLibrary(): void {
+  // Close previous watchers if called again (re-watch guard)
+  for (const w of staticWatchers) w.close()
+  staticWatchers.length = 0
+
   const staticDirs = getStaticSourceDirs()
   let staticTimer: ReturnType<typeof setTimeout> | null = null
   for (const dir of staticDirs) {
     try {
-      fs.watch(dir, (_eventType, filename) => {
+      const watcher = fs.watch(dir, (_eventType, filename) => {
         if (!filename) return
         if (staticTimer) clearTimeout(staticTimer)
         staticTimer = setTimeout(() => {
@@ -86,6 +110,7 @@ function watchStaticLibrary(): void {
           notifyCatalogChanged()
         }, 500)
       })
+      staticWatchers.push(watcher)
       console.log('[StaticLibrary] Watching:', dir)
     } catch (err) {
       console.error('[StaticLibrary] Failed to watch folder:', dir, err)
@@ -98,7 +123,7 @@ async function scanVantageWallpapersFolder(): Promise<number> {
   let addedCount = 0
   const presentIds: string[] = []
   try {
-    const files = fs.readdirSync(targetDir)
+    const files = await fs.promises.readdir(targetDir)
     for (const file of files) {
       if (file.startsWith('.')) continue
       const ext = path.extname(file).toLowerCase()
@@ -106,7 +131,7 @@ async function scanVantageWallpapersFolder(): Promise<number> {
         const filePath = path.join(targetDir, file)
         let stat: fs.Stats
         try {
-          stat = fs.statSync(filePath)
+          stat = await fs.promises.stat(filePath)
         } catch {
           continue
         }
@@ -126,12 +151,12 @@ async function scanVantageWallpapersFolder(): Promise<number> {
         const newItem = {
           id,
           title: file.replace(/\.[^/.]+$/, ''),
-          category: 'imported' as const,
-          type: isVideo ? 'video' : 'user-import',
+          category: isVideo ? ('imported' as const) : ('static' as const),
+          type: isVideo ? ('video' as const) : ('image' as const),
           previewUrl: toMediaUrl(previewPath),
           sourceUrl: toMediaUrl(filePath),
-          resolution: { width: 3840, height: 2160 },
-          source: 'user' as const,
+          resolution: await getMediaDimensions(filePath),
+          source: isVideo ? ('user' as const) : ('static' as const),
           license: 'Local Folder Import',
           attribution: 'Local File'
         }
@@ -483,12 +508,12 @@ function registerIpcHandlers(): void {
     const newItem = {
       id,
       title: filename.replace(/\.[^/.]+$/, ''),
-      category: 'imported' as const,
-      type: isVideo ? 'video' : 'user-import',
+      category: isVideo ? ('imported' as const) : ('static' as const),
+      type: isVideo ? ('video' as const) : ('image' as const),
       previewUrl: toMediaUrl(previewPath),
       sourceUrl: toMediaUrl(targetPath),
-      resolution: { width: 3840, height: 2160 },
-      source: 'user' as const,
+      resolution: await getMediaDimensions(targetPath),
+      source: isVideo ? ('user' as const) : ('static' as const),
       license: 'User Imported File',
       attribution: 'Local File'
     }
@@ -599,9 +624,17 @@ function registerIpcHandlers(): void {
 // App lifecycle
 app.on('before-quit', () => {
   isQuitting = true
+
+  // RES-02: Explicitly close DB for clean WAL checkpoint
+  closeDatabase()
+
+  // RES-01: Close all file watchers
+  if (folderWatcher) { folderWatcher.close(); folderWatcher = null }
+  for (const w of staticWatchers) w.close()
+  staticWatchers.length = 0
 })
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   setGalleryWindowGetter(() => galleryWindow)
 
   // Build the set of allowed base directories for the media:// protocol
@@ -747,7 +780,7 @@ app.whenReady().then(() => {
   initDatabase()
   scanVantageWallpapersFolder()
   watchVantageWallpapersFolder()
-  const staticAdded = syncStaticWallpapers()
+  const staticAdded = await syncStaticWallpapers()
   if (staticAdded > 0) {
     console.log(`[StaticLibrary] Registered ${staticAdded} static wallpapers`)
   }

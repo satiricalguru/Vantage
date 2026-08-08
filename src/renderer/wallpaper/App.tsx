@@ -4,19 +4,6 @@ import { GenerativeLayer } from './GenerativeLayer'
 import { AiStillLayer } from './AiStillLayer'
 import type { WallpaperItem } from '../../shared/types'
 
-declare global {
-  interface Window {
-    wallpaperApi: {
-      getInitialState: () => Promise<{ wallpaper: WallpaperItem | null; performanceMode: string; isPlaying: boolean }>
-      onWallpaperChange: (callback: (data: { wallpaper: WallpaperItem; displayId: number }) => void) => () => void
-      onPerformanceModeChange: (callback: (mode: string) => void) => () => void
-      onPlaybackStateChange: (callback: (isPlaying: boolean) => void) => () => void
-      ensureCached: (url: string) => Promise<string>
-      onCacheProgress: (callback: (data: { url: string; received: number; total: number; pct: number }) => void) => () => void
-    }
-  }
-}
-
 export const App: React.FC = () => {
   const [wallpaper, setWallpaper] = useState<WallpaperItem | null>(null)
   const [playSrc, setPlaySrc] = useState<string>('')
@@ -38,8 +25,12 @@ export const App: React.FC = () => {
     setDownloadPct(0)
     downloadUrlRef.current = item.sourceUrl
     try {
-      const cachedPath = await window.wallpaperApi.ensureCached(item.sourceUrl)
-      setPlaySrc(`media://${cachedPath}`)
+      if (window.wallpaperApi) {
+        const cachedPath = await window.wallpaperApi.ensureCached(item.sourceUrl)
+        setPlaySrc(`media://${cachedPath}`)
+      } else {
+        setPlaySrc(item.sourceUrl)
+      }
       setDownloadPct(null)
       downloadUrlRef.current = ''
     } catch (err) {

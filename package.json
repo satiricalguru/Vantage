@@ -5,6 +5,9 @@
   "main": "./out/main/index.js",
   "author": "Vantage Team",
   "homepage": "https://github.com/satiricalguru/Vantage",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "node scripts/build-icon.mjs && electron-vite dev",
     "build": "node scripts/build-icon.mjs && electron-vite build && npm run build:screen-saver",
@@ -35,7 +38,7 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
-    "electron": "^43.3.0",
+    "electron": "43.3.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "postcss": "^8.5.1",
@@ -66,6 +69,10 @@
       "!resources/thumbnails/**/*"
     ],
     "extraResources": [
+      {
+        "from": "resources/catalog.json",
+        "to": "resources/catalog.json"
+      },
       {
         "from": "resources/thumbnails",
         "to": "resources/thumbnails"

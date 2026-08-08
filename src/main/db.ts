@@ -6,7 +6,42 @@ import { INITIAL_WALLPAPERS } from './contentSources'
 import { WallpaperItem, DEFAULT_WALLPAPER_ID } from '../shared/types'
 import { toMediaUrl } from './mediaUrl'
 
+/** Shape of a row returned by SELECT * FROM wallpapers */
+interface WallpaperRow {
+  id: string
+  title: string
+  category: string
+  type: string
+  source: string
+  license: string
+  attribution: string | null
+  resolution_w: number
+  resolution_h: number
+  duration: number | null
+  previewUrl: string
+  sourceUrl: string
+  generatorId: string | null
+  colorPalette: string | null
+  is_favorite: number
+  added_at: number
+}
+
+/** Shape of a row returned by SELECT * FROM display_assignments */
+interface DisplayAssignmentRow {
+  display_id: string
+  wallpaper_id: string
+  performance_mode: string | null
+}
+
 let db: Database.Database | null = null
+
+/** Explicitly close the database — call from `before-quit` to ensure WAL checkpoint completes. */
+export function closeDatabase(): void {
+  if (db) {
+    try { db.close() } catch { /* best-effort */ }
+    db = null
+  }
+}
 
 export function initDatabase(): Database.Database {
   if (db) return db
@@ -75,13 +110,21 @@ export function initDatabase(): Database.Database {
   const syncCatalog = db!.transaction((items: WallpaperItem[]) => {
     // Purge outdated catalog entries from database that are no longer in INITIAL_WALLPAPERS and not user imported
     // (remote Pexels/Unsplash results are kept: they are valid live-search items)
-    const placeHolders = items.map(() => '?').join(',')
-    const itemIds = items.map((i) => i.id)
-    try {
-      db!.prepare(`UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (SELECT id FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT LIKE 'pexels-%' AND id NOT LIKE 'unsplash-%' AND id NOT IN (${placeHolders}))`).run(DEFAULT_WALLPAPER_ID, ...itemIds)
-      db!.prepare(`DELETE FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT LIKE 'pexels-%' AND id NOT LIKE 'unsplash-%' AND id NOT IN (${placeHolders})`).run(...itemIds)
-    } catch (err) {
-      console.warn('[DB Sync] Warning during catalog cleanup:', err)
+    if (items.length > 0) {
+      const itemIds = items.map((i) => i.id)
+      try {
+        // Use a temp table for large ID lists to avoid exceeding SQLite's
+        // SQLITE_MAX_VARIABLE_NUMBER limit (~999 on some builds).
+        db!.exec('CREATE TEMP TABLE IF NOT EXISTS _kept_ids (id TEXT PRIMARY KEY)')
+        db!.exec('DELETE FROM _kept_ids')
+        const insertKept = db!.prepare('INSERT OR IGNORE INTO _kept_ids (id) VALUES (?)')
+        for (const id of itemIds) insertKept.run(id)
+
+        db!.prepare(`UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (SELECT id FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT LIKE 'pexels-%' AND id NOT LIKE 'unsplash-%' AND id NOT IN (SELECT id FROM _kept_ids))`).run(DEFAULT_WALLPAPER_ID)
+        db!.prepare(`DELETE FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT LIKE 'pexels-%' AND id NOT LIKE 'unsplash-%' AND id NOT IN (SELECT id FROM _kept_ids)`).run()
+      } catch (err) {
+        console.warn('[DB Sync] Warning during catalog cleanup:', err)
+      }
     }
 
     for (const item of items) {
@@ -131,24 +174,24 @@ function resolveMediaUrl(url: string | undefined | null): string {
 export function getAllWallpapers(category?: string, query?: string): WallpaperItem[] {
   const database = initDatabase()
   let sql = 'SELECT * FROM wallpapers'
-  const params: any[] = []
+  const params: (string | number)[] = []
   const conditions: string[] = []
 
   if (category === 'static') {
     conditions.push("source = 'static'")
-  } else if (category && category !== 'all' && category !== 'favorites' && category !== 'videos') {
-    conditions.push('category = ?')
-    params.push(category)
-  } else if (category === 'favorites') {
-    conditions.push('is_favorite = 1')
-  } else if (category === 'videos') {
-    conditions.push('type = ?')
-    params.push('video')
-  }
-
-  if (!category || category === 'all') {
+  } else {
     // Static wallpapers are only exposed via the dedicated Static Wallpapers tab
     conditions.push("source != 'static'")
+
+    if (category && category !== 'all' && category !== 'favorites' && category !== 'videos') {
+      conditions.push('category = ?')
+      params.push(category)
+    } else if (category === 'favorites') {
+      conditions.push('is_favorite = 1')
+    } else if (category === 'videos') {
+      conditions.push('type = ?')
+      params.push('video')
+    }
   }
 
   if (query && query.trim() !== '') {
@@ -161,9 +204,20 @@ export function getAllWallpapers(category?: string, query?: string): WallpaperIt
     sql += ' WHERE ' + conditions.join(' AND ')
   }
 
-  sql += ' ORDER BY added_at DESC'
+  const isCategorySection =
+    category &&
+    category !== 'all' &&
+    category !== 'favorites' &&
+    category !== 'videos' &&
+    category !== 'imported'
 
-  const rows = database.prepare(sql).all(...params) as any[]
+  if (isCategorySection || category === 'static') {
+    sql += ' ORDER BY title COLLATE NOCASE ASC'
+  } else {
+    sql += ' ORDER BY added_at DESC'
+  }
+
+  const rows = database.prepare(sql).all(...params) as WallpaperRow[]
 
   return rows.map((r) => ({
     id: r.id,
@@ -172,12 +226,12 @@ export function getAllWallpapers(category?: string, query?: string): WallpaperIt
     type: r.type,
     source: r.source,
     license: r.license,
-    attribution: r.attribution,
+    attribution: r.attribution ?? undefined,
     resolution: { width: r.resolution_w, height: r.resolution_h },
-    duration: r.duration,
+    duration: r.duration ?? undefined,
     previewUrl: resolveMediaUrl(r.previewUrl),
     sourceUrl: resolveMediaUrl(r.sourceUrl),
-    generatorId: r.generatorId,
+    generatorId: r.generatorId ?? undefined,
     colorPalette: r.colorPalette ? JSON.parse(r.colorPalette) : undefined,
     is_favorite: Boolean(r.is_favorite)
   }))
@@ -185,7 +239,7 @@ export function getAllWallpapers(category?: string, query?: string): WallpaperIt
 
 export function getWallpaperById(id: string): WallpaperItem | null {
   const database = initDatabase()
-  const row = database.prepare('SELECT * FROM wallpapers WHERE id = ?').get(id) as any
+  const row = database.prepare('SELECT * FROM wallpapers WHERE id = ?').get(id) as WallpaperRow | undefined
   if (!row) return null
 
   return {
@@ -195,12 +249,12 @@ export function getWallpaperById(id: string): WallpaperItem | null {
     type: row.type,
     source: row.source,
     license: row.license,
-    attribution: row.attribution,
+    attribution: row.attribution ?? undefined,
     resolution: { width: row.resolution_w, height: row.resolution_h },
-    duration: row.duration,
+    duration: row.duration ?? undefined,
     previewUrl: resolveMediaUrl(row.previewUrl),
     sourceUrl: resolveMediaUrl(row.sourceUrl),
-    generatorId: row.generatorId,
+    generatorId: row.generatorId ?? undefined,
     colorPalette: row.colorPalette ? JSON.parse(row.colorPalette) : undefined,
     is_favorite: Boolean(row.is_favorite)
   }
@@ -218,7 +272,7 @@ export function setDisplayAssignment(displayId: string, wallpaperId: string): vo
 
 export function getDisplayAssignment(displayId: string): { wallpaperId: string | null; performanceMode: string } {
   const database = initDatabase()
-  const row = database.prepare('SELECT * FROM display_assignments WHERE display_id = ?').get(displayId) as any
+  const row = database.prepare('SELECT * FROM display_assignments WHERE display_id = ?').get(displayId) as DisplayAssignmentRow | undefined
   if (!row) {
     return { wallpaperId: DEFAULT_WALLPAPER_ID, performanceMode: 'balanced' }
   }
@@ -263,6 +317,9 @@ export function addWallpaperToDb(item: WallpaperItem): void {
     )
     ON CONFLICT(id) DO UPDATE SET
       title = excluded.title,
+      category = excluded.category,
+      type = excluded.type,
+      source = excluded.source,
       previewUrl = excluded.previewUrl,
       sourceUrl = excluded.sourceUrl
   `).run({
@@ -287,25 +344,29 @@ export function addWallpaperToDb(item: WallpaperItem): void {
 /** Remove locally-scanned folder entries whose source file no longer exists */
 export function pruneUserFolderEntries(keptIds: string[]): void {
   const database = initDatabase()
-  const placeHolders = keptIds.map(() => '?').join(',')
   try {
     const prune = database.transaction(() => {
       if (keptIds.length > 0) {
+        database.exec('CREATE TEMP TABLE IF NOT EXISTS _kept_ids (id TEXT PRIMARY KEY)')
+        database.exec('DELETE FROM _kept_ids')
+        const insertKept = database.prepare('INSERT OR IGNORE INTO _kept_ids (id) VALUES (?)')
+        for (const id of keptIds) insertKept.run(id)
+
         database.prepare(
           `UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (
-            SELECT id FROM wallpapers WHERE source = 'user' AND id LIKE 'user-folder-%' AND id NOT IN (${placeHolders})
+            SELECT id FROM wallpapers WHERE id LIKE 'user-folder-%' AND id NOT IN (SELECT id FROM _kept_ids)
           )`
-        ).run(DEFAULT_WALLPAPER_ID, ...keptIds)
+        ).run(DEFAULT_WALLPAPER_ID)
         database.prepare(
-          `DELETE FROM wallpapers WHERE source = 'user' AND id LIKE 'user-folder-%' AND id NOT IN (${placeHolders})`
-        ).run(...keptIds)
+          `DELETE FROM wallpapers WHERE id LIKE 'user-folder-%' AND id NOT IN (SELECT id FROM _kept_ids)`
+        ).run()
       } else {
         database.prepare(
           `UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (
-            SELECT id FROM wallpapers WHERE source = 'user' AND id LIKE 'user-folder-%'
+            SELECT id FROM wallpapers WHERE id LIKE 'user-folder-%'
           )`
         ).run(DEFAULT_WALLPAPER_ID)
-        database.prepare(`DELETE FROM wallpapers WHERE source = 'user' AND id LIKE 'user-folder-%'`).run()
+        database.prepare(`DELETE FROM wallpapers WHERE id LIKE 'user-folder-%'`).run()
       }
     })
     prune()
@@ -317,18 +378,22 @@ export function pruneUserFolderEntries(keptIds: string[]): void {
 /** Remove static-catalog entries whose source file no longer exists */
 export function pruneStaticWallpapers(keptIds: string[]): void {
   const database = initDatabase()
-  const placeHolders = keptIds.map(() => '?').join(',')
   try {
     const prune = database.transaction(() => {
       if (keptIds.length > 0) {
+        database.exec('CREATE TEMP TABLE IF NOT EXISTS _kept_ids (id TEXT PRIMARY KEY)')
+        database.exec('DELETE FROM _kept_ids')
+        const insertKept = database.prepare('INSERT OR IGNORE INTO _kept_ids (id) VALUES (?)')
+        for (const id of keptIds) insertKept.run(id)
+
         database.prepare(
           `UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (
-            SELECT id FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%' AND id NOT IN (${placeHolders})
+            SELECT id FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%' AND id NOT IN (SELECT id FROM _kept_ids)
           )`
-        ).run(DEFAULT_WALLPAPER_ID, ...keptIds)
+        ).run(DEFAULT_WALLPAPER_ID)
         database.prepare(
-          `DELETE FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%' AND id NOT IN (${placeHolders})`
-        ).run(...keptIds)
+          `DELETE FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%' AND id NOT IN (SELECT id FROM _kept_ids)`
+        ).run()
       } else {
         database.prepare(
           `UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (

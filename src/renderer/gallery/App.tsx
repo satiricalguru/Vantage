@@ -6,7 +6,6 @@ import { SourcesAndCredits } from './screens/SourcesAndCredits'
 import { ItemDetail } from './screens/ItemDetail'
 import { ApertureIrisIcon } from './components/ApertureIrisIcon'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import type { WallpaperItem, DisplayInfo, AppSettings, CacheStatus } from '../../shared/types'
 import {
   Compass,
   Film,
@@ -22,36 +21,8 @@ import {
   Image as ImageIcon,
   Settings as SettingsIcon,
   ShieldCheck,
-  PlusCircle,
-  Minus,
-  X
+  PlusCircle
 } from 'lucide-react'
-
-declare global {
-  interface Window {
-    galleryApi: {
-      getWallpapers: (category?: string, query?: string) => Promise<WallpaperItem[]>
-      applyToDisplay: (displayId: number, wallpaperId: string) => Promise<boolean>
-      toggleFavorite: (wallpaperId: string, isFavorite: boolean) => Promise<boolean>
-      getDisplays: () => Promise<DisplayInfo[]>
-      getSettings: () => Promise<AppSettings>
-      setSettings: (partial: Partial<AppSettings>) => Promise<boolean>
-      setupScreenSaver: () => Promise<{ path: string }>
-      setPerformanceMode: (displayId: number, mode: string) => Promise<boolean>
-      importFile: () => Promise<WallpaperItem | null>
-      openFolder: () => Promise<string>
-      scanLocalFolder: () => Promise<number>
-      clearCache: () => Promise<number>
-      getCacheStatus: () => Promise<CacheStatus>
-      setLoginAtLogin: (openAtLogin: boolean) => Promise<boolean>
-      openExternal: (url: string) => void
-      onDisplayChanged: (callback: (displays: DisplayInfo[]) => void) => () => void
-      onCatalogChanged: (callback: () => void) => () => void
-      minimizeWindow: () => Promise<void>
-      closeWindow: () => Promise<void>
-    }
-  }
-}
 
 export const App: React.FC = () => {
   const {
@@ -64,8 +35,7 @@ export const App: React.FC = () => {
     fetchWallpapers,
     fetchDisplays,
     importFile,
-    openWallpaperFolder,
-    displays
+    openWallpaperFolder
   } = useGalleryStore()
 
   useEffect(() => {
@@ -114,22 +84,6 @@ export const App: React.FC = () => {
             <span className="text-[10px] font-mono text-glow px-1.5 py-0.5 rounded bg-glow/10 border border-glow/20 ml-auto select-none">
               macOS
             </span>
-            <div className="flex items-center gap-1 [-webkit-app-region:no-drag]">
-              <button
-                onClick={() => window.galleryApi?.minimizeWindow()}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-dim hover:text-ink hover:bg-panel-hover border border-transparent hover:border-line transition"
-                title="Minimize"
-              >
-                <Minus className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => window.galleryApi?.closeWindow()}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-dim hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition"
-                title="Close gallery (wallpapers keep running)"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
           </div>
 
           {/* Navigation Categories */}

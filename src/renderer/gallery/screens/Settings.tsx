@@ -223,6 +223,29 @@ export const Settings: React.FC = () => {
           <span>Disk Cache & Storage</span>
         </div>
 
+        <div className="space-y-2 p-3 bg-void border border-line rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-semibold text-ink">Max Storage Limit</div>
+              <div className="text-xs text-ink-dim">
+                Maximum disk space allocated for cached video wallpapers.
+              </div>
+            </div>
+            <span className="text-xs font-mono text-glow bg-glow/10 border border-glow/20 px-2.5 py-1 rounded">
+              {settings.maxCacheSizeGb} GB
+            </span>
+          </div>
+          <input
+            type="range"
+            min="1"
+            max="50"
+            step="1"
+            value={settings.maxCacheSizeGb}
+            onChange={(e) => saveSettingsDebounced({ maxCacheSizeGb: Number(e.target.value) })}
+            className="w-full accent-glow cursor-pointer"
+          />
+        </div>
+
         <div className="flex items-center justify-between p-3 bg-void border border-line rounded-lg">
           <div>
             <div className="text-sm font-semibold text-ink">Clear Asset Cache</div>

@@ -1,15 +1,20 @@
 // Shared type definitions used across main, preload, and renderer processes
 
+export type WallpaperType = 'video' | 'generative' | 'user-import' | 'image' | string
+export type WallpaperCategory = 'all' | 'anime' | 'games' | 'nature' | 'generative' | 'imported' | 'videos' | 'static' | string
+export type WallpaperSource = 'local' | 'custom' | 'user' | 'static' | 'pexels' | 'unsplash' | string
+export type PerformanceMode = 'quality' | 'balanced' | 'battery-saver' | 'pause' | string
+
 export interface WallpaperItem {
   id: string
   title: string
-  category: string
-  type: string
+  category: WallpaperCategory
+  type: WallpaperType
   previewUrl: string
   sourceUrl: string
   resolution: { width: number; height: number }
   duration?: number
-  source: string
+  source: WallpaperSource
   license: string
   attribution?: string
   colorPalette?: string[]
@@ -23,14 +28,14 @@ export interface DisplayInfo {
   bounds: { x: number; y: number; width: number; height: number }
   scaleFactor: number
   assignedWallpaperId: string | null
-  performanceMode: string
+  performanceMode: PerformanceMode
 }
 
 export interface AppSettings {
   openAtLogin: boolean
   showInDock: boolean
   maxCacheSizeGb: number
-  theme: string
+  theme: 'dark' | 'light' | 'system' | string
 }
 
 export interface CacheStatus {

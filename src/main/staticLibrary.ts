@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import type { WallpaperItem } from '../shared/types'
 import { addWallpaperToDb, pruneStaticWallpapers, getWallpaperById } from './db'
 import { toMediaUrl } from './mediaUrl'
+import { getMediaDimensions } from './mediaInfo'
 
 const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp']
 
@@ -76,7 +77,7 @@ function scanDir(dir: string): ScannedImage[] {
 }
 
 /** Scan all static source folders into a manifest of WallpaperItems */
-export function buildStaticManifest(): StaticManifest {
+export async function buildStaticManifest(): Promise<StaticManifest> {
   const items: WallpaperItem[] = []
   const presentIds: string[] = []
   const seen = new Set<string>()
@@ -91,6 +92,7 @@ export function buildStaticManifest(): StaticManifest {
       seen.add(id)
       presentIds.push(id)
 
+      const dims = await getMediaDimensions(entry.filePath)
       items.push({
         id,
         title: base,
@@ -98,7 +100,7 @@ export function buildStaticManifest(): StaticManifest {
         type: 'image',
         previewUrl: toMediaUrl(entry.filePath),
         sourceUrl: toMediaUrl(entry.filePath),
-        resolution: { width: 3840, height: 2160 },
+        resolution: dims,
         source: 'static',
         license: 'Wallpaper X Extracted Collection',
         attribution: 'Extracted from Wallpaper X (user-owned)'
@@ -110,8 +112,8 @@ export function buildStaticManifest(): StaticManifest {
 }
 
 /** Add any new static wallpapers to the DB and prune removed ones */
-export function syncStaticWallpapers(): number {
-  const { items, presentIds } = buildStaticManifest()
+export async function syncStaticWallpapers(): Promise<number> {
+  const { items, presentIds } = await buildStaticManifest()
   let added = 0
   for (const item of items) {
     if (!getWallpaperById(item.id)) added++

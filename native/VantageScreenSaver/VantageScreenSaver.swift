@@ -102,7 +102,9 @@ final class VantageScreenSaverView: ScreenSaverView {
             let trimmedPath = selectedPath.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmedPath.isEmpty {
                 let selectedURL = URL(fileURLWithPath: trimmedPath)
-                if fileManager.isReadableFile(atPath: selectedURL.path) {
+                let ext = selectedURL.pathExtension.lowercased()
+                let validExtensions = ["mp4", "mov", "webm", "jpg", "jpeg", "png", "webp", "heic", "tiff"]
+                if validExtensions.contains(ext) && fileManager.isReadableFile(atPath: selectedURL.path) {
                     return selectedURL
                 }
             }

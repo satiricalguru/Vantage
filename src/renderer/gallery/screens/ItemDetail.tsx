@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useGalleryStore, WallpaperItem } from '../store/useGalleryStore'
 import { ApertureIrisIcon } from '../components/ApertureIrisIcon'
-import { X, Heart, Monitor, Check, ExternalLink } from 'lucide-react'
+import { X, Heart, Monitor, Check } from 'lucide-react'
 
 interface ItemDetailProps {
   item: WallpaperItem
