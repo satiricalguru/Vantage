@@ -104,7 +104,8 @@ export function initDatabase(): Database.Database {
       resolution_h = excluded.resolution_h,
       previewUrl = excluded.previewUrl,
       sourceUrl = excluded.sourceUrl,
-      generatorId = excluded.generatorId
+      generatorId = excluded.generatorId,
+      added_at = excluded.added_at
   `)
 
   const syncCatalog = db!.transaction((items: WallpaperItem[]) => {
@@ -126,6 +127,8 @@ export function initDatabase(): Database.Database {
       }
     }
 
+    const baseTime = Date.now()
+    let idx = 0
     for (const item of items) {
       upsertStmt.run({
         id: item.id,
@@ -142,8 +145,9 @@ export function initDatabase(): Database.Database {
         sourceUrl: item.sourceUrl,
         generatorId: item.generatorId || null,
         colorPalette: item.colorPalette ? JSON.stringify(item.colorPalette) : null,
-        added_at: Date.now()
+        added_at: baseTime - idx
       })
+      idx++
     }
   })
 

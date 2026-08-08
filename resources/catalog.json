@@ -21040,12 +21040,12 @@
     "attribution": "MotionBGS 4K Collection"
   },
   {
-    "id": "motionbgs-remielle-dan-smile",
-    "title": "Remielle Dan Smile",
+    "id": "motionbgs-wuthering-waves-night-festival",
+    "title": "Wuthering Waves Night Festival",
     "category": "games",
     "type": "video",
-    "previewUrl": "resources/thumbnails/motionbgs-remielle-dan-smile.jpg",
-    "sourceUrl": "https://motionbgs.com/media/9941/remielle-dan-smile.3840x2160.mp4",
+    "previewUrl": "resources/thumbnails/motionbgs-wuthering-waves-night-festival.jpg",
+    "sourceUrl": "https://motionbgs.com/media/9918/wuthering-waves-night-festival.3840x2160.mp4",
     "resolution": {
       "width": 3840,
       "height": 2160
@@ -21088,12 +21088,12 @@
     "attribution": "MotionBGS 4K Collection"
   },
   {
-    "id": "motionbgs-wuthering-waves-night-festival",
-    "title": "Wuthering Waves Night Festival",
+    "id": "motionbgs-remielle-dan-smile",
+    "title": "Remielle Dan Smile",
     "category": "games",
     "type": "video",
-    "previewUrl": "resources/thumbnails/motionbgs-wuthering-waves-night-festival.jpg",
-    "sourceUrl": "https://motionbgs.com/media/9918/wuthering-waves-night-festival.3840x2160.mp4",
+    "previewUrl": "resources/thumbnails/motionbgs-remielle-dan-smile.jpg",
+    "sourceUrl": "https://motionbgs.com/media/9941/remielle-dan-smile.3840x2160.mp4",
     "resolution": {
       "width": 3840,
       "height": 2160
