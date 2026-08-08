@@ -163,6 +163,33 @@ function resolveMediaUrl(url: string | undefined | null): string {
     const fullPath = path.join(baseDir, url)
     return toMediaUrl(fullPath)
   }
+  if (url.startsWith('extracted/')) {
+    const relPath = url.slice('extracted/'.length)
+    const baseDir = app.isPackaged ? process.resourcesPath : app.getAppPath()
+    const localExtracted = path.join(baseDir, 'Extracted_Video_Wallpapers', relPath)
+    if (fs.existsSync(localExtracted)) {
+      return toMediaUrl(localExtracted)
+    }
+
+    // Fallback to managed pictures folder (~/Pictures/Vantage Wallpapers/)
+    try {
+      const picturesDir = app.getPath('pictures')
+      const managedFolder = path.join(picturesDir, 'Vantage Wallpapers')
+      const exactFallback = path.join(managedFolder, relPath)
+      if (fs.existsSync(exactFallback)) {
+        return toMediaUrl(exactFallback)
+      }
+      if (fs.existsSync(managedFolder)) {
+        const files = fs.readdirSync(managedFolder)
+        const match = files.find((f) => f.toLowerCase() === relPath.toLowerCase())
+        if (match) {
+          return toMediaUrl(path.join(managedFolder, match))
+        }
+      }
+    } catch { /* ignore */ }
+
+    return toMediaUrl(localExtracted)
+  }
   return url
 }
 

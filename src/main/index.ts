@@ -10,6 +10,7 @@ import { searchRemoteWallpapers } from './remoteSources'
 import { ensureCached, getCacheStatus, clearCache, evictToLimit, setCacheLimitBytes, getCacheDir, isAllowedRemoteMediaUrl, onCacheProgress, getCacheLimitBytes, CACHE_FLOOR_BYTES, CACHE_CEILING_BYTES } from './videoCache'
 import { syncStaticWallpapers, getStaticSourceDirs } from './staticLibrary'
 import store from './store'
+import { INITIAL_WALLPAPERS } from './contentSources'
 import { ALLOWED_SETTINGS_KEYS, DEFAULT_WALLPAPER_ID, WallpaperItem } from '../shared/types'
 import { toMediaUrl } from './mediaUrl'
 import { installVantageScreenSaver, setupVantageScreenSaver, syncSelectedScreenSaverVideo } from './screenSaver'
@@ -128,6 +129,12 @@ async function scanVantageWallpapersFolder(): Promise<number> {
       if (file.startsWith('.')) continue
       const ext = path.extname(file).toLowerCase()
       if (['.mp4', '.mov', '.webm', '.png', '.jpg', '.jpeg', '.webp'].includes(ext)) {
+        // Skip scanning files that belong to the built-in catalog (e.g. V8.mp4, V233.mp4, V295.mp4)
+        const isCatalogFile = INITIAL_WALLPAPERS.some(
+          (item) => item.sourceUrl && item.sourceUrl.toLowerCase() === `extracted/${file.toLowerCase()}`
+        )
+        if (isCatalogFile) continue
+
         const filePath = path.join(targetDir, file)
         let stat: fs.Stats
         try {
