@@ -235,18 +235,7 @@ export function getAllWallpapers(category?: string, query?: string): WallpaperIt
     sql += ' WHERE ' + conditions.join(' AND ')
   }
 
-  const isCategorySection =
-    category &&
-    category !== 'all' &&
-    category !== 'favorites' &&
-    category !== 'videos' &&
-    category !== 'imported'
-
-  if (isCategorySection || category === 'static') {
-    sql += " ORDER BY (CASE WHEN source = 'user' OR category = 'imported' OR id LIKE 'user-%' THEN 0 WHEN source = 'local' OR id LIKE 'wallpaperx-%' THEN 1 ELSE 2 END) ASC, title COLLATE NOCASE ASC"
-  } else {
-    sql += " ORDER BY (CASE WHEN source = 'user' OR category = 'imported' OR id LIKE 'user-%' THEN 0 WHEN source = 'local' OR id LIKE 'wallpaperx-%' THEN 1 ELSE 2 END) ASC, added_at DESC"
-  }
+  sql += " ORDER BY (CASE WHEN source = 'user' OR category = 'imported' OR id LIKE 'user-%' THEN 0 WHEN source = 'local' OR id LIKE 'wallpaperx-%' THEN 1 ELSE 2 END) ASC, title COLLATE NOCASE ASC"
 
   const rows = database.prepare(sql).all(...params) as WallpaperRow[]
 
