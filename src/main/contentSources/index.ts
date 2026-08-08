@@ -19,7 +19,7 @@ function loadCatalog(): WallpaperItem[] {
     const items: WallpaperItem[] = JSON.parse(raw)
 
     // Ensure the default wallpaper ID stays in sync with the shared constant
-    if (items.length > 0 && items[0].id === 'wallpaperx-v8') {
+    if (items.length > 0 && items[0].id === 'motionbgs-celestial-veil') {
       items[0].id = DEFAULT_WALLPAPER_ID
     }
 

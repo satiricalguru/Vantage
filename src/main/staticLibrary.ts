@@ -25,12 +25,6 @@ export interface StaticManifest {
 export function getStaticSourceDirs(): string[] {
   const dirs: string[] = []
 
-  const appRoot = app.isPackaged ? process.resourcesPath : app.getAppPath()
-  const extractedPapers = path.join(appRoot, 'Extracted_Video_Wallpapers', 'Papers')
-  if (fs.existsSync(extractedPapers)) {
-    dirs.push(extractedPapers)
-  }
-
   const dropIn = path.join(app.getPath('pictures'), 'Vantage Wallpapers', 'Static')
   try {
     // Create the drop-in directory once so it is also watched when the user
@@ -38,8 +32,7 @@ export function getStaticSourceDirs(): string[] {
     fs.mkdirSync(dropIn, { recursive: true })
     dirs.push(dropIn)
   } catch {
-    // The user may have denied access to Pictures; keep the bundled source
-    // available and let the caller report any watch failure.
+    // Access denied to Pictures
   }
 
   return dirs

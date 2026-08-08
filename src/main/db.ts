@@ -163,11 +163,6 @@ function resolveMediaUrl(url: string | undefined | null): string {
     const fullPath = path.join(baseDir, url)
     return toMediaUrl(fullPath)
   }
-  if (url.startsWith('extracted/')) {
-    const baseDir = app.isPackaged ? process.resourcesPath : app.getAppPath()
-    const fullPath = path.join(baseDir, 'Extracted_Video_Wallpapers', url.slice('extracted/'.length))
-    return toMediaUrl(fullPath)
-  }
   return url
 }
 
