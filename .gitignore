@@ -33,3 +33,6 @@ resources/thumbnails/
 .env
 .env.local
 .env.*.local
+
+# Agent configuration
+.agents/
