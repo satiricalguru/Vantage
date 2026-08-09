@@ -96,7 +96,7 @@ function watchStaticLibrary(): void {
         staticTimer = setTimeout(() => {
           enqueueStaticSync()
           notifyCatalogChanged()
-        }, 500)
+        }, 3000)
       })
       staticWatchers.push(watcher)
       console.log('[StaticLibrary] Watching:', dir)
