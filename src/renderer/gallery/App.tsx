@@ -46,7 +46,7 @@ export const App: React.FC = () => {
         fetchDisplays()
       })
       const unsubCatalog = window.galleryApi.onCatalogChanged(() => {
-        fetchWallpapers()
+        fetchWallpapers(true)
       })
       return () => {
         unsub()

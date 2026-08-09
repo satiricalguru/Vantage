@@ -20,7 +20,7 @@ interface GalleryStore {
   setSelectedDisplayId: (id: number) => void
   setSelectedWallpaper: (item: WallpaperItem | null) => void
   setActiveScreen: (screen: 'gallery' | 'settings' | 'credits') => void
-  fetchWallpapers: () => Promise<void>
+  fetchWallpapers: (silent?: boolean) => Promise<void>
   fetchDisplays: () => Promise<void>
   applyWallpaper: (displayId: number, wallpaperId: string) => Promise<void>
   toggleFavorite: (wallpaperId: string, currentFav?: boolean) => Promise<void>
@@ -68,9 +68,11 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
   setSelectedWallpaper: (item) => set({ selectedWallpaper: item }),
   setActiveScreen: (screen) => set({ activeScreen: screen }),
 
-  fetchWallpapers: async () => {
+  fetchWallpapers: async (silent = false) => {
     const seq = ++fetchSeq
-    set({ isLoading: true, error: null })
+    if (!silent) {
+      set({ isLoading: true, error: null })
+    }
     if (window.galleryApi) {
       try {
         const items = await window.galleryApi.getWallpapers(
@@ -119,7 +121,7 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
     if (window.galleryApi) {
       try {
         await window.galleryApi.toggleFavorite(wallpaperId, !currentFav)
-        await get().fetchWallpapers()
+        await get().fetchWallpapers(true)
         const updated = get().wallpapers.find((w) => w.id === wallpaperId)
         const selected = get().selectedWallpaper
         if (selected && updated && selected.id === wallpaperId) {
@@ -138,7 +140,7 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
         if (get().selectedWallpaper?.id === wallpaperId) {
           set({ selectedWallpaper: null })
         }
-        await get().fetchWallpapers()
+        await get().fetchWallpapers(true)
       } catch (error) {
         set({ error: error instanceof Error ? error.message : 'Unable to delete wallpaper.' })
       }

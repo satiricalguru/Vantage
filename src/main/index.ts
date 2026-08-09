@@ -913,6 +913,11 @@ app.whenReady().then(async () => {
         }
 
         const nodeStream = fs.createReadStream(filePath, { start, end })
+        if (request.signal) {
+          request.signal.addEventListener('abort', () => {
+            if (!nodeStream.destroyed) nodeStream.destroy()
+          }, { once: true })
+        }
         const webStream = Readable.toWeb(nodeStream)
 
         return new Response(webStream as ReadableStream, {
@@ -927,6 +932,11 @@ app.whenReady().then(async () => {
       }
 
       const nodeStream = fs.createReadStream(filePath)
+      if (request.signal) {
+        request.signal.addEventListener('abort', () => {
+          if (!nodeStream.destroyed) nodeStream.destroy()
+        }, { once: true })
+      }
       const webStream = Readable.toWeb(nodeStream)
 
       return new Response(webStream as ReadableStream, {

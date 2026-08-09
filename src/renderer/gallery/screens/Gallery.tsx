@@ -260,7 +260,13 @@ const WallpaperTile: React.FC<WallpaperTileProps> = ({ item, onSelect }) => {
           </span>
         </div>
         <span className="font-mono text-[10px] text-ink-dim bg-void px-1.5 py-0.5 rounded border border-line shrink-0">
-          {item.resolution.width}p
+          {item.resolution.width >= 3840
+            ? '4K'
+            : item.resolution.width >= 2560
+              ? '2K'
+              : item.resolution.width >= 1920
+                ? '1080p'
+                : `${item.resolution.height || 1080}p`}
         </span>
       </div>
     </div>

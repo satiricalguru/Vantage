@@ -1,47 +1,51 @@
 import { Component, ErrorInfo, ReactNode } from 'react'
+import { ApertureIrisIcon } from './ApertureIrisIcon'
 
-interface ErrorBoundaryProps {
-  children: ReactNode
-  fallback?: ReactNode
+interface Props {
+  children?: ReactNode
 }
 
-interface ErrorBoundaryState {
+interface State {
   hasError: boolean
   error: Error | null
 }
 
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props)
-    this.state = { hasError: false, error: null }
+export class ErrorBoundary extends Component<Props, State> {
+  public state: State = {
+    hasError: false,
+    error: null
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error('[ErrorBoundary] Caught render error:', error, errorInfo)
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    console.error('[GalleryErrorBoundary] Uncaught UI error:', error, errorInfo)
   }
 
-  render(): ReactNode {
-    if (this.state.hasError) {
-      if (this.props.fallback) return this.props.fallback
+  private handleReset = (): void => {
+    this.setState({ hasError: false, error: null })
+    window.location.reload()
+  }
 
+  public render(): ReactNode {
+    if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center h-full w-full bg-void text-ink p-8">
-          <div className="bg-panel border border-line rounded-xl p-6 max-w-md text-center space-y-3">
-            <h2 className="text-lg font-semibold text-ink">Something went wrong</h2>
-            <p className="text-xs text-ink-dim font-mono">
-              {this.state.error?.message || 'An unexpected error occurred.'}
-            </p>
-            <button
-              onClick={() => this.setState({ hasError: false, error: null })}
-              className="px-4 py-1.5 rounded-lg bg-glow/10 text-glow border border-glow/30 text-xs font-medium hover:bg-glow/20 transition"
-            >
-              Try Again
-            </button>
+        <div className="h-screen w-screen bg-void text-ink flex flex-col items-center justify-center p-6 text-center select-none">
+          <div className="p-4 rounded-full bg-rose-500/10 border border-rose-500/20 mb-4">
+            <ApertureIrisIcon className="w-10 h-10 text-rose-400" />
           </div>
+          <h2 className="text-lg font-bold tracking-wide text-ink mb-1">Renderer Exception Encountered</h2>
+          <p className="text-xs font-mono text-ink-dim max-w-md mb-6">
+            {this.state.error?.message || 'An unexpected rendering error occurred in the component tree.'}
+          </p>
+          <button
+            onClick={this.handleReset}
+            className="px-4 py-2 rounded-lg bg-glow/20 text-glow border border-glow/30 hover:bg-glow/30 transition text-xs font-medium"
+          >
+            Reload Vantage Gallery
+          </button>
         </div>
       )
     }
