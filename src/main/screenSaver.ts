@@ -177,14 +177,26 @@ export async function installVantageScreenSaver(): Promise<string> {
  */
 let syncQueue: Promise<void> = Promise.resolve()
 
+import { getMediaDimensions } from './mediaInfo'
+
 /**
- * Extracts a high-definition 1080p/4K static snapshot frame from a video file using macOS native qlmanage.
+ * Extracts a high-definition 2K/4K static snapshot frame from a video file using macOS native qlmanage.
  */
 export async function getHighResVideoFrame(videoPath: string): Promise<string | null> {
   if (process.platform !== 'darwin' || !fs.existsSync(videoPath)) return null
 
   try {
-    const hash = crypto.createHash('sha1').update(videoPath).digest('hex')
+    const dims = await getMediaDimensions(videoPath)
+    let frameSize = 1920
+    if (dims.width >= 3840) {
+      frameSize = 3840
+    } else if (dims.width >= 2560) {
+      frameSize = 2560
+    } else if (dims.width > 0) {
+      frameSize = Math.max(dims.width, 1920)
+    }
+
+    const hash = crypto.createHash('sha1').update(`${videoPath}:${frameSize}`).digest('hex')
     const cacheDir = path.join(app.getPath('userData'), 'highres-frames')
     fs.mkdirSync(cacheDir, { recursive: true })
 
@@ -193,8 +205,8 @@ export async function getHighResVideoFrame(videoPath: string): Promise<string | 
       return targetFramePath
     }
 
-    // Use native macOS qlmanage to extract a 1920px HD frame from the video
-    await execFileAsync('/usr/bin/qlmanage', ['-t', '-s', '1920', '-o', cacheDir, videoPath])
+    // Use native macOS qlmanage to extract a 2K/4K frame from the video
+    await execFileAsync('/usr/bin/qlmanage', ['-t', '-s', String(frameSize), '-o', cacheDir, videoPath])
 
     const generatedName = `${path.basename(videoPath)}.png`
     const generatedPath = path.join(cacheDir, generatedName)

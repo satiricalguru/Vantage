@@ -24,15 +24,30 @@ if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true })
 }
 
+let targetSize = '3840'
 if (process.platform === 'darwin') {
   try {
-    execFileSync('/usr/bin/qlmanage', ['-t', '-s', '1280', '-o', outputDir, inputPath], { stdio: 'ignore' })
+    const mdlsOut = execFileSync('mdls', ['-name', 'kMDItemPixelWidth', inputPath], { encoding: 'utf8' })
+    const match = mdlsOut.match(/kMDItemPixelWidth\s*=\s*(\d+)/)
+    if (match) {
+      const w = parseInt(match[1], 10)
+      if (w >= 3840) targetSize = '3840'
+      else if (w >= 2560) targetSize = '2560'
+      else if (w >= 1920) targetSize = '1920'
+      else if (w > 0) targetSize = String(Math.max(w, 1280))
+    }
+  } catch {
+    /* fallback to default targetSize */
+  }
+
+  try {
+    execFileSync('/usr/bin/qlmanage', ['-t', '-s', targetSize, '-o', outputDir, inputPath], { stdio: 'ignore' })
     const generatedPng = path.join(outputDir, `${filename}.png`)
     if (fs.existsSync(generatedPng)) {
       if (generatedPng !== outputPath) {
         fs.renameSync(generatedPng, outputPath)
       }
-      console.log(`[Thumbnail] Created thumbnail image: ${outputPath}`)
+      console.log(`[Thumbnail] Created ${targetSize}px thumbnail image: ${outputPath}`)
       process.exit(0)
     }
   } catch (err) {
