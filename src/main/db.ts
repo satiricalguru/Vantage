@@ -406,7 +406,9 @@ export function addWallpaperToDb(item: WallpaperItem): void {
       type = excluded.type,
       source = excluded.source,
       previewUrl = excluded.previewUrl,
-      sourceUrl = excluded.sourceUrl
+      sourceUrl = excluded.sourceUrl,
+      resolution_w = excluded.resolution_w,
+      resolution_h = excluded.resolution_h
   `).run({
     id: item.id,
     title: item.title,
