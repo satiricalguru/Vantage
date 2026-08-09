@@ -129,7 +129,7 @@ export async function buildStaticManifest(): Promise<StaticManifest> {
   const presentIds: string[] = []
   const seen = new Set<string>()
 
-  const tasks: Array<{ filePath: string; id: string; base: string; license: string; attribution: string }> = []
+  const tasks: Array<{ filePath: string; id: string; base: string; rawBase: string; license: string; attribution: string }> = []
 
   for (const dir of getStaticSourceDirs()) {
     const { license, attribution } = licenseAndAttribution(dir)
@@ -142,7 +142,7 @@ export async function buildStaticManifest(): Promise<StaticManifest> {
       seen.add(id)
       presentIds.push(id)
       const formattedTitle = formatStaticTitle(base)
-      tasks.push({ filePath: entry.filePath, id, base: formattedTitle, license, attribution })
+      tasks.push({ filePath: entry.filePath, id, base: formattedTitle, rawBase: base, license, attribution })
     }
   }
 
@@ -153,7 +153,16 @@ export async function buildStaticManifest(): Promise<StaticManifest> {
     while (cursor < tasks.length) {
       const taskIdx = cursor++
       const task = tasks[taskIdx]
-      const dims = await getMediaDimensions(task.filePath)
+      let dims = await getMediaDimensions(task.filePath)
+      
+      // Preserve canonical 4K/2K catalog resolution if available in catalog.json
+      const catalogMatch = INITIAL_WALLPAPERS.find(
+        (w) => w.id === task.rawBase || w.id === `motionbgs-${task.rawBase}` || w.id === `wallpaperx-${task.rawBase}`
+      )
+      if (catalogMatch && catalogMatch.resolution && catalogMatch.resolution.width > 0) {
+        dims = catalogMatch.resolution
+      }
+
       items[taskIdx] = {
         id: task.id,
         title: task.base,
