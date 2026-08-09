@@ -60,40 +60,48 @@ const tempSwiftFile = path.join(buildDir, 'render_icon.swift')
 fs.writeFileSync(tempSwiftFile, swiftScript, 'utf8')
 
 try {
-  execFileSync('swift', [tempSwiftFile], { stdio: 'ignore' })
+  execFileSync('swift', [tempSwiftFile], { stdio: 'pipe' })
 } catch (err) {
-  console.warn('[BuildIcon] Native Swift NSImage SVG rendering failed:', err)
+  const stderr = err.stderr?.toString?.() || ''
+  console.error(`[BuildIcon] Native Swift SVG rendering FAILED: ${stderr}`)
+  console.error('[BuildIcon] Aborting — the app would otherwise ship with the default Electron icon.')
+  process.exit(1)
 } finally {
   if (fs.existsSync(tempSwiftFile)) fs.rmSync(tempSwiftFile, { force: true })
 }
 
-if (fs.existsSync(tmpPng) && fs.statSync(tmpPng).size > 0) {
+if (!fs.existsSync(tmpPng) || fs.statSync(tmpPng).size <= 0) {
+  console.error('[BuildIcon] Swift rendering produced no PNG output. Aborting build.')
+  process.exit(1)
+}
+
+{
   fs.copyFileSync(tmpPng, pngTarget)
   fs.copyFileSync(tmpPng, resourcesPngTarget)
 
   if (!fs.existsSync(iconsetDir)) fs.mkdirSync(iconsetDir, { recursive: true })
-  const sizes = [16, 32, 64, 128, 256, 512, 1024]
+  const sizes = [16, 32, 128, 256, 512, 1024]
   for (const size of sizes) {
     if (size === 1024) {
-      execFileSync('sips', ['-z', String(size), String(size), tmpPng, '--out', path.join(iconsetDir, 'icon_512x512@2x.png')], { stdio: 'ignore' })
+      execFileSync('sips', ['-z', String(size), String(size), tmpPng, '--out', path.join(iconsetDir, 'icon_512x512@2x.png')], { stdio: 'pipe' })
     } else if (size === 16) {
-      execFileSync('sips', ['-z', String(size), String(size), tmpPng, '--out', path.join(iconsetDir, 'icon_16x16.png')], { stdio: 'ignore' })
-      execFileSync('sips', ['-z', '32', '32', tmpPng, '--out', path.join(iconsetDir, 'icon_16x16@2x.png')], { stdio: 'ignore' })
+      execFileSync('sips', ['-z', String(size), String(size), tmpPng, '--out', path.join(iconsetDir, 'icon_16x16.png')], { stdio: 'pipe' })
+      execFileSync('sips', ['-z', '32', '32', tmpPng, '--out', path.join(iconsetDir, 'icon_16x16@2x.png')], { stdio: 'pipe' })
     } else if (size === 32) {
-      execFileSync('sips', ['-z', '32', '32', tmpPng, '--out', path.join(iconsetDir, 'icon_32x32.png')], { stdio: 'ignore' })
-      execFileSync('sips', ['-z', '64', '64', tmpPng, '--out', path.join(iconsetDir, 'icon_32x32@2x.png')], { stdio: 'ignore' })
+      execFileSync('sips', ['-z', '32', '32', tmpPng, '--out', path.join(iconsetDir, 'icon_32x32.png')], { stdio: 'pipe' })
+      execFileSync('sips', ['-z', '64', '64', tmpPng, '--out', path.join(iconsetDir, 'icon_32x32@2x.png')], { stdio: 'pipe' })
     } else if (size === 128) {
-      execFileSync('sips', ['-z', '128', '128', tmpPng, '--out', path.join(iconsetDir, 'icon_128x128.png')], { stdio: 'ignore' })
-      execFileSync('sips', ['-z', '256', '256', tmpPng, '--out', path.join(iconsetDir, 'icon_128x128@2x.png')], { stdio: 'ignore' })
+      execFileSync('sips', ['-z', '128', '128', tmpPng, '--out', path.join(iconsetDir, 'icon_128x128.png')], { stdio: 'pipe' })
+      execFileSync('sips', ['-z', '256', '256', tmpPng, '--out', path.join(iconsetDir, 'icon_128x128@2x.png')], { stdio: 'pipe' })
     } else if (size === 256) {
-      execFileSync('sips', ['-z', '256', '256', tmpPng, '--out', path.join(iconsetDir, 'icon_256x256.png')], { stdio: 'ignore' })
-      execFileSync('sips', ['-z', '512', '512', tmpPng, '--out', path.join(iconsetDir, 'icon_256x256@2x.png')], { stdio: 'ignore' })
+      execFileSync('sips', ['-z', '256', '256', tmpPng, '--out', path.join(iconsetDir, 'icon_256x256.png')], { stdio: 'pipe' })
+      execFileSync('sips', ['-z', '512', '512', tmpPng, '--out', path.join(iconsetDir, 'icon_256x256@2x.png')], { stdio: 'pipe' })
     } else if (size === 512) {
-      execFileSync('sips', ['-z', '512', '512', tmpPng, '--out', path.join(iconsetDir, 'icon_512x512.png')], { stdio: 'ignore' })
+      execFileSync('sips', ['-z', '512', '512', tmpPng, '--out', path.join(iconsetDir, 'icon_512x512.png')], { stdio: 'pipe' })
     }
   }
 
-  execFileSync('iconutil', ['-c', 'icns', iconsetDir, '-o', icnsTarget], { stdio: 'ignore' })
+  execFileSync('iconutil', ['-c', 'icns', iconsetDir, '-o', icnsTarget], { stdio: 'pipe' })
   fs.rmSync(iconsetDir, { recursive: true, force: true })
   fs.rmSync(tmpPng, { force: true })
   console.log('[BuildIcon] Successfully generated crisp transparent PNG & ICNS app icons!')

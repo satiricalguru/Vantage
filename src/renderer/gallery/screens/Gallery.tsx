@@ -117,11 +117,31 @@ const WallpaperTile: React.FC<WallpaperTileProps> = ({ item, onSelect }) => {
   const [hasVideoError, setHasVideoError] = useState(false)
   const { activeCategory, toggleFavorite, deleteWallpaper } = useGalleryStore()
   const isImportedCategory = activeCategory === 'imported'
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleMouseEnter = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
+    hoverTimerRef.current = setTimeout(() => {
+      setIsHovered(true)
+    }, 150)
+  }
+
+  const handleMouseLeave = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
+    hoverTimerRef.current = null
+    setIsHovered(false)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
+    }
+  }, [])
 
   return (
     <div
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onClick={() => onSelect(item)}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {

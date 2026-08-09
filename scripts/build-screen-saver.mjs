@@ -36,57 +36,95 @@ rmSync(outputDir, { recursive: true, force: true })
 mkdirSync(macOsDir, { recursive: true })
 mkdirSync(resourcesDir, { recursive: true })
 
-const sdkResult = spawnSync('xcrun', ['--sdk', 'macosx', '--show-sdk-path'], { encoding: 'utf8' })
-if (sdkResult.status !== 0) {
-  throw new Error(`[ScreenSaver] Could not locate the macOS SDK: ${sdkResult.stderr}`)
+try {
+  build()
+} catch (err) {
+  // Never leave a partial .saver bundle behind — a stale artifact could end
+  // up shipped in the next DMG.
+  rmSync(outputDir, { recursive: true, force: true })
+  throw err
 }
-const sdkPath = sdkResult.stdout.trim()
 
-const packageJson = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'))
-const infoPlist = readFileSync(infoPath, 'utf8')
-  .replace('<string>1.0</string>', `<string>${packageJson.version}</string>`)
-  .replace('<string>1</string>', `<string>${packageJson.version}</string>`)
-
-const archOutputPaths = []
-for (const arch of ['arm64', 'x86_64']) {
-  const archOutput = path.join(macOsDir, `VantageScreenSaver-${arch}`)
-  const result = spawnSync('swiftc', [
-    sourcePath,
-    '-parse-as-library',
-    '-module-name', 'VantageScreenSaver',
-    '-sdk', sdkPath,
-    '-target', `${arch}-apple-macosx12.0`,
-    '-emit-library',
-    '-o', archOutput,
-    '-Xlinker', '-bundle',
-    '-Xlinker', '-undefined',
-    '-Xlinker', 'dynamic_lookup',
-    '-framework', 'AppKit',
-    '-framework', 'AVFoundation',
-    '-framework', 'ScreenSaver'
-  ], { stdio: 'inherit' })
-
-  if (result.status !== 0) {
-    throw new Error(`[ScreenSaver] Swift build failed for ${arch}.`)
+function build() {
+  const sdkResult = spawnSync('xcrun', ['--sdk', 'macosx', '--show-sdk-path'], { encoding: 'utf8' })
+  if (sdkResult.status !== 0) {
+    throw new Error(`[ScreenSaver] Could not locate the macOS SDK: ${sdkResult.stderr}`)
   }
-  archOutputPaths.push(archOutput)
+  const sdkPath = sdkResult.stdout.trim()
+
+  const packageJson = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'))
+  const version = packageJson.version
+  let infoPlist = readFileSync(infoPath, 'utf8')
+  const templated = infoPlist
+    .replace('<string>1.0</string>', `<string>${version}</string>`)
+    .replace('<string>1</string>', `<string>${version}</string>`)
+  if (templated === infoPlist) {
+    throw new Error('[ScreenSaver] Info.plist version templating matched nothing — update the CFBundleVersion/CFBundleShortVersionString templates in Info.plist.')
+  }
+  infoPlist = templated
+
+  const archOutputPaths = []
+  for (const arch of ['arm64', 'x86_64']) {
+    const archOutput = path.join(macOsDir, `VantageScreenSaver-${arch}`)
+    const result = spawnSync('swiftc', [
+      sourcePath,
+      '-parse-as-library',
+      '-module-name', 'VantageScreenSaver',
+      '-sdk', sdkPath,
+      '-target', `${arch}-apple-macosx12.0`,
+      '-emit-library',
+      '-o', archOutput,
+      '-Xlinker', '-bundle',
+      '-Xlinker', '-undefined',
+      '-Xlinker', 'dynamic_lookup',
+      '-framework', 'AppKit',
+      '-framework', 'AVFoundation',
+      '-framework', 'ScreenSaver'
+    ], { stdio: 'inherit' })
+
+    if (result.status !== 0) {
+      throw new Error(`[ScreenSaver] Swift build failed for ${arch}.`)
+    }
+    archOutputPaths.push(archOutput)
+  }
+
+  const lipoResult = spawnSync('lipo', ['-create', ...archOutputPaths, '-output', binaryPath], { stdio: 'inherit' })
+  if (lipoResult.status !== 0) {
+    throw new Error('[ScreenSaver] Could not create the universal screen saver binary.')
+  }
+
+  for (const archOutput of archOutputPaths) {
+    rmSync(archOutput, { force: true })
+  }
+
+  writeFileSync(path.join(contentsDir, 'Info.plist'), infoPlist)
+  cpSync(defaultVideoPath, path.join(resourcesDir, 'VantageDefault.mp4'))
+
+  const signResult = spawnSync('codesign', ['--force', '--sign', '-', outputDir], { stdio: 'inherit' })
+  if (signResult.status !== 0) {
+    throw new Error('[ScreenSaver] Could not ad-hoc sign the screen saver bundle.')
+  }
+
+  // Post-build validation: the artifact must be a real universal binary and a
+  // valid code signature, or we refuse to report success.
+  const lipoInfo = spawnSync('lipo', ['-info', binaryPath], { encoding: 'utf8' })
+  if (lipoInfo.status !== 0) {
+    throw new Error('[ScreenSaver] lipo validation failed on the built binary.')
+  }
+  const arches = (lipoInfo.stdout || '').match(/arm64|x86_64/g) || []
+  if (!arches.includes('arm64') || !arches.includes('x86_64')) {
+    throw new Error(`[ScreenSaver] Universal binary is missing an architecture: ${lipoInfo.stdout}`)
+  }
+
+  const plistLint = spawnSync('plutil', ['-lint', path.join(contentsDir, 'Info.plist')], { encoding: 'utf8' })
+  if (plistLint.status !== 0) {
+    throw new Error(`[ScreenSaver] Info.plist validation failed: ${plistLint.stderr || plistLint.stdout}`)
+  }
+
+  const verifyResult = spawnSync('codesign', ['--verify', '--strict', '--verbose=2', outputDir], { encoding: 'utf8' })
+  if (verifyResult.status !== 0) {
+    throw new Error(`[ScreenSaver] codesign verification failed: ${verifyResult.stderr || verifyResult.stdout}`)
+  }
+
+  console.log(`[ScreenSaver] Built universal bundle: ${outputDir}`)
 }
-
-const lipoResult = spawnSync('lipo', ['-create', ...archOutputPaths, '-output', binaryPath], { stdio: 'inherit' })
-if (lipoResult.status !== 0) {
-  throw new Error('[ScreenSaver] Could not create the universal screen saver binary.')
-}
-
-for (const archOutput of archOutputPaths) {
-  rmSync(archOutput, { force: true })
-}
-
-writeFileSync(path.join(contentsDir, 'Info.plist'), infoPlist)
-cpSync(defaultVideoPath, path.join(resourcesDir, 'VantageDefault.mp4'))
-
-const signResult = spawnSync('codesign', ['--force', '--deep', '--sign', '-', outputDir], { stdio: 'inherit' })
-if (signResult.status !== 0) {
-  throw new Error('[ScreenSaver] Could not ad-hoc sign the screen saver bundle.')
-}
-
-console.log(`[ScreenSaver] Built universal bundle: ${outputDir}`)

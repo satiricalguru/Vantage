@@ -58,6 +58,16 @@ function isVideoPath(filePath: string): boolean {
  */
 let lastSystemWallpaperPath: string | null = null
 
+/**
+ * Escapes a path for safe interpolation into a double-quoted AppleScript
+ * string. Backslashes and quotes are escaped; control characters (including
+ * newlines) cannot be represented safely and cause the call to be rejected.
+ */
+function appleScriptEscape(value: string): string | null {
+  if (/[\u0000-\u001F\u007F]/.test(value)) return null
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
 export async function setMacSystemWallpaper(imagePath: string): Promise<boolean> {
   if (process.platform !== 'darwin') return false
   if (!imagePath || !fs.existsSync(imagePath)) {
@@ -68,7 +78,11 @@ export async function setMacSystemWallpaper(imagePath: string): Promise<boolean>
     return true
   }
 
-  const safePath = imagePath.replace(/"/g, '\\"')
+  const safePath = appleScriptEscape(imagePath)
+  if (safePath === null) {
+    console.warn('[SystemWallpaper] Refusing to embed path with control characters in AppleScript:', imagePath)
+    return false
+  }
   const script = `tell application "System Events" to set picture of every desktop to (POSIX file "${safePath}")`
   try {
     await execFileAsync('/usr/bin/osascript', ['-e', script])
@@ -269,7 +283,15 @@ export async function setupVantageScreenSaver(): Promise<{ path: string }> {
   const installedPath = await installVantageScreenSaver()
   await syncLockScreenAndSystemWallpaper()
   await activateVantageScreenSaver(installedPath)
-  await shell.openExternal('x-apple.systempreferences:com.apple.Wallpaper-Settings.extension')
+  try {
+    await shell.openExternal('x-apple.systempreferences:com.apple.Wallpaper-Settings.extension')
+  } catch {
+    try {
+      await shell.openExternal('x-apple.systempreferences:com.apple.preference.desktopscreensaver')
+    } catch (err) {
+      console.warn('[ScreenSaver] Could not open macOS Screen Saver settings pane automatically:', err)
+    }
+  }
   return { path: installedPath }
 }
 

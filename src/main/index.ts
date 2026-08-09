@@ -3,7 +3,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { Readable } from 'node:stream'
-import { initDatabase, getAllWallpapers, getWallpaperById, setDisplayAssignment, getDisplayAssignment, setPerformanceMode, toggleFavoriteInDb, deleteWallpaperFromDb, addWallpaperToDb, pruneUserFolderEntries, closeDatabase } from './db'
+import { initDatabase, getAllWallpapers, getWallpaperById, setDisplayAssignment, getDisplayAssignment, setPerformanceMode, toggleFavoriteInDb, deleteWallpaperFromDb, addWallpaperToDb, pruneUserFolderEntries, closeDatabase, getWallpaperFileReferences } from './db'
 import { syncWallpaperWindows, applyWallpaperToDisplay, setPerformanceModeForDisplay, setupDisplayListeners, getGlobalPlaybackState, setGalleryWindowGetter, broadcastCacheProgress } from './wallpaperWindow'
 import { createTray } from './tray'
 import { initPowerManager } from './powerManager'
@@ -15,9 +15,10 @@ import { ALLOWED_SETTINGS_KEYS, DEFAULT_WALLPAPER_ID } from '../shared/types'
 import { toMediaUrl } from './mediaUrl'
 import { installVantageScreenSaver, setupVantageScreenSaver, syncSelectedScreenSaverVideo } from './screenSaver'
 
-import { generateVideoThumbnail } from './thumbnailGenerator'
+import { generateVideoThumbnail, pruneOrphanThumbnails } from './thumbnailGenerator'
 import { getMediaDimensions } from './mediaInfo'
 import { freeUpMemory } from './memoryManager'
+import { hardenWindowNavigation } from './windowSecurity'
 
 // Global safety nets — log diagnostics for truly unexpected failures so they
 // never disappear silently into the void.
@@ -71,7 +72,7 @@ function watchVantageWallpapersFolder(): void {
       if (!filename) return
       if (scanTimer) clearTimeout(scanTimer)
       scanTimer = setTimeout(() => {
-        scanVantageWallpapersFolder()
+        enqueueScan()
         notifyCatalogChanged()
       }, 500)
     })
@@ -87,14 +88,13 @@ function watchStaticLibrary(): void {
   staticWatchers.length = 0
 
   const staticDirs = getStaticSourceDirs()
-  let staticTimer: ReturnType<typeof setTimeout> | null = null
   for (const dir of staticDirs) {
     try {
       const watcher = fs.watch(dir, (_eventType, filename) => {
         if (!filename) return
         if (staticTimer) clearTimeout(staticTimer)
         staticTimer = setTimeout(() => {
-          syncStaticWallpapers()
+          enqueueStaticSync()
           notifyCatalogChanged()
         }, 500)
       })
@@ -110,6 +110,15 @@ async function scanVantageWallpapersFolder(): Promise<number> {
   const targetDir = getVantageWallpapersFolder()
   let addedCount = 0
   const presentIds: string[] = []
+  // Sanitized IDs can collide (e.g. "a b.png" vs "a_b.png"); disambiguate
+  // deterministically within a scan pass so no DB row is silently overwritten.
+  const seenUserFolderIds = new Map<string, number>()
+  const uniqueUserFolderId = (file: string): string => {
+    const base = `user-folder-${file.replace(/[^a-zA-Z0-9_-]/g, '_')}`
+    const count = seenUserFolderIds.get(base) ?? 0
+    seenUserFolderIds.set(base, count + 1)
+    return count === 0 ? base : `${base}-${count + 1}`
+  }
   try {
     const files = await fs.promises.readdir(targetDir)
     interface ScanTask {
@@ -138,7 +147,7 @@ async function scanVantageWallpapersFolder(): Promise<number> {
         }
         if (!stat.isFile()) continue
         const isVideo = ['.mp4', '.mov', '.webm'].includes(ext)
-        const id = `user-folder-${file.replace(/[^a-zA-Z0-9_-]/g, '_')}`
+        const id = uniqueUserFolderId(file)
         presentIds.push(id)
         tasks.push({ file, id, filePath, isVideo })
       }
@@ -180,6 +189,9 @@ async function scanVantageWallpapersFolder(): Promise<number> {
 
     // Purge DB entries for files that no longer exist in the folder
     pruneUserFolderEntries(presentIds)
+
+    // Garbage-collect generated thumbnails no longer referenced by any DB row
+    pruneOrphanThumbnails(getWallpaperFileReferences())
   } catch (err) {
     console.error('[FolderScanner] Error scanning Vantage Wallpapers folder:', err)
   }
@@ -187,6 +199,43 @@ async function scanVantageWallpapersFolder(): Promise<number> {
 }
 
 let scanTimer: ReturnType<typeof setTimeout> | null = null
+let staticTimer: ReturnType<typeof setTimeout> | null = null
+
+// Serialize folder scans so overlapping watcher/startup/manual scans can never
+// interleave (two concurrent scans previously raced on the prune step and tore
+// DB rows out from under each other).
+let scanQueue: Promise<number> = Promise.resolve(0)
+let staticSyncQueue: Promise<number> = Promise.resolve(0)
+
+function enqueueScan(): Promise<number> {
+  const run = scanQueue.then(() => {
+    if (isQuitting) return 0
+    return scanVantageWallpapersFolder()
+  }).catch((err) => {
+    console.error('[FolderScanner] Scan failed:', err)
+    return 0
+  })
+  scanQueue = run.then(
+    () => 0,
+    () => 0
+  )
+  return run
+}
+
+function enqueueStaticSync(): Promise<number> {
+  const run = staticSyncQueue.then(() => {
+    if (isQuitting) return 0
+    return syncStaticWallpapers()
+  }).catch((err) => {
+    console.error('[StaticLibrary] Sync failed:', err)
+    return 0
+  })
+  staticSyncQueue = run.then(
+    () => 0,
+    () => 0
+  )
+  return run
+}
 
 function notifyCatalogChanged(): void {
   if (galleryWindow && !galleryWindow.isDestroyed()) {
@@ -303,6 +352,13 @@ function createGalleryWindow(): BrowserWindow {
 
   forwardRendererLogs(galleryWindow)
 
+  hardenWindowNavigation(
+    galleryWindow,
+    process.env['ELECTRON_RENDERER_URL']
+      ? `${process.env['ELECTRON_RENDERER_URL']}/gallery.html`
+      : `file://${path.join(__dirname, '../renderer/gallery.html')}`
+  )
+
   if (process.env['ELECTRON_RENDERER_URL']) {
     galleryWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/gallery.html`)
   } else {
@@ -371,8 +427,41 @@ function registerIpcHandlers(): void {
     const item = getWallpaperById(wallpaperId)
     if (!item) throw new Error('Wallpaper does not exist')
 
+    // Never allow built-in catalog wallpapers to be physically deleted.
+    const BUILTIN_SOURCES = new Set(['ai', 'custom', 'local'])
+    if (BUILTIN_SOURCES.has(item.source)) {
+      throw new Error('Cannot delete built-in wallpaper')
+    }
+
     // Delete DB record & reset assignments if needed
     deleteWallpaperFromDb(wallpaperId)
+
+    // Only delete physical files that live inside the managed folder or the
+    // generated-thumbnails directory — never files the DB row merely points at
+    // elsewhere (e.g. bundled app media or files from the static library).
+    const deleteZoneBases = [
+      getVantageWallpapersFolder(),
+      path.join(app.getPath('userData'), 'thumbnails')
+    ]
+    const isPathInDeleteZone = (localPath: string): boolean => {
+      try {
+        const canonicalFile = fs.realpathSync(localPath)
+        return deleteZoneBases.some((base) => {
+          try {
+            const canonicalBase = fs.realpathSync(base)
+            const relative = path.relative(canonicalBase, canonicalFile)
+            return (
+              relative === '' ||
+              (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative))
+            )
+          } catch {
+            return false
+          }
+        })
+      } catch {
+        return false
+      }
+    }
 
     // Helper to safely delete local physical files if present
     const safelyDeleteFile = (urlOrPath: string) => {
@@ -383,9 +472,12 @@ function registerIpcHandlers(): void {
         } else if (localPath.startsWith('media://')) {
           localPath = decodeURIComponent(localPath.replace('media://', ''))
         }
-        if (fs.existsSync(localPath)) {
-          fs.unlinkSync(localPath)
+        if (!fs.existsSync(localPath)) return
+        if (!isPathInDeleteZone(localPath)) {
+          console.warn('[DB] Refusing to delete file outside managed zone:', localPath)
+          return
         }
+        fs.unlinkSync(localPath)
       } catch (err) {
         console.warn('[DB] Could not delete physical file:', urlOrPath, err)
       }
@@ -393,6 +485,10 @@ function registerIpcHandlers(): void {
 
     if (item.sourceUrl) safelyDeleteFile(item.sourceUrl)
     if (item.previewUrl && item.previewUrl !== item.sourceUrl) safelyDeleteFile(item.previewUrl)
+
+    // Garbage-collect generated thumbnails that no DB row references anymore
+    // (this row was deleted above, so its preview URL is now unreferenced)
+    pruneOrphanThumbnails(getWallpaperFileReferences())
 
     notifyCatalogChanged()
     return true
@@ -514,15 +610,27 @@ function registerIpcHandlers(): void {
 
     // Copy the import into the managed folder so the wallpaper is stable even if
     // the original file is moved, deleted, or the path is outside the allow-list.
+    // Never overwrite an existing file with the same name — pick a unique name.
     const targetDir = getVantageWallpapersFolder()
-    const targetPath = path.join(targetDir, filename)
+    const uniqueTargetPath = (dir: string, name: string): string => {
+      let candidate = path.join(dir, name)
+      if (!fs.existsSync(candidate)) return candidate
+      const ext = path.extname(name)
+      const base = name.slice(0, name.length - ext.length) || name
+      for (let i = 1; ; i++) {
+        candidate = path.join(dir, `${base} (${i})${ext}`)
+        if (!fs.existsSync(candidate)) return candidate
+      }
+    }
+    const targetPath = uniqueTargetPath(targetDir, filename)
     try {
-      fs.copyFileSync(sourcePath, targetPath)
+      await fs.promises.copyFile(sourcePath, targetPath)
     } catch (err) {
       console.error('[Import] Failed to copy file into managed folder:', err)
       return null
     }
 
+    const finalName = path.basename(targetPath)
     let previewPath = targetPath
     if (isVideo) {
       const generatedThumb = await generateVideoThumbnail(targetPath)
@@ -531,11 +639,11 @@ function registerIpcHandlers(): void {
       }
     }
 
-    const id = `user-folder-${filename.replace(/[^a-zA-Z0-9_-]/g, '_')}`
+    const id = `user-folder-${finalName.replace(/[^a-zA-Z0-9_-]/g, '_')}`
     const existing = getWallpaperById(id)
     const newItem = {
       id,
-      title: filename.replace(/\.[^/.]+$/, ''),
+      title: finalName.replace(/\.[^/.]+$/, ''),
       category: isVideo ? ('imported' as const) : ('static' as const),
       type: isVideo ? ('video' as const) : ('image' as const),
       previewUrl: toMediaUrl(previewPath),
@@ -603,7 +711,7 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('wallpaper:scan-local-folder', (event) => {
     requireTrustedIpcSender(event)
-    return scanVantageWallpapersFolder()
+    return enqueueScan()
   })
 
   ipcMain.handle('window:minimize', (event) => {
@@ -618,15 +726,25 @@ function registerIpcHandlers(): void {
     if (win) win.close()
   })
 
-  ipcMain.handle('shell:open-external', (event, url: string) => {
+  ipcMain.handle('shell:open-external', async (event, url: string) => {
     requireTrustedIpcSender(event)
+    let parsed: URL | null = null
     try {
-      const parsed = new URL(url)
-      if (parsed.protocol === 'https:') {
-        shell.openExternal(parsed.href)
-      }
+      parsed = new URL(url)
     } catch {
       console.warn('[shell:open-external] Rejected invalid URL:', url)
+      return false
+    }
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'mailto:') {
+      console.warn('[shell:open-external] Rejected non-https URL:', url)
+      return false
+    }
+    try {
+      await shell.openExternal(parsed.href)
+      return true
+    } catch (err) {
+      console.warn('[shell:open-external] Failed to open URL:', url, err)
+      return false
     }
   })
 
@@ -658,6 +776,12 @@ function registerIpcHandlers(): void {
 app.on('before-quit', () => {
   isQuitting = true
 
+  // RES-03: Cancel pending debounced scans before they can re-open the DB
+  // after closeDatabase() below (a late scan called initDatabase() again,
+  // reopening a WAL connection mid-quit).
+  if (scanTimer) { clearTimeout(scanTimer); scanTimer = null }
+  if (staticTimer) { clearTimeout(staticTimer); staticTimer = null }
+
   // RES-02: Explicitly close DB for clean WAL checkpoint
   closeDatabase()
 
@@ -670,11 +794,19 @@ app.on('before-quit', () => {
 app.whenReady().then(async () => {
   setGalleryWindowGetter(() => galleryWindow)
 
-  // Build the set of allowed base directories for the media:// protocol
+  // Build the set of allowed base directories for the media:// protocol.
+  // NOTE: deliberately NOT app.getPath('userData') as a whole — that would
+  // expose vantage.db, cookies and the Chromium profile to any renderer webContents.
+  const userData = app.getPath('userData')
+  const userDataMediaDirs = [
+    path.join(userData, 'thumbnails'),
+    path.join(userData, 'screen-saver'),
+    path.join(userData, 'highres-frames')
+  ]
   const allowedMediaBasePaths: string[] = [
     getVantageWallpapersFolder(),
     app.isPackaged ? process.resourcesPath : app.getAppPath(),
-    app.getPath('userData'),
+    ...userDataMediaDirs,
     getCacheDir(),
     ...getStaticSourceDirs()
   ]
@@ -705,10 +837,15 @@ app.whenReady().then(async () => {
     '.mp4': 'video/mp4',
     '.webm': 'video/webm',
     '.mov': 'video/quicktime',
+    '.m4v': 'video/x-m4v',
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
-    '.webp': 'image/webp'
+    '.webp': 'image/webp',
+    '.gif': 'image/gif',
+    '.bmp': 'image/bmp',
+    '.heic': 'image/heic',
+    '.heif': 'image/heif'
   }
 
   // Protocol handler for local file media streaming with full Range headers support
@@ -717,15 +854,17 @@ app.whenReady().then(async () => {
       const rawPath = request.url.replace(/^media:\/+/i, '/')
       const filePath = path.resolve(decodeURIComponent(rawPath))
 
+      // Report genuinely missing files as 404 before the allow-list check
+      // (the allow-list check requires realpath, which fails for missing files)
+      if (!fs.existsSync(filePath)) {
+        console.warn('[MediaProtocol] File not found:', filePath)
+        return new Response('File Not Found', { status: 404 })
+      }
+
       // C-2 FIX: Validate that the resolved path is under an allowed directory
       if (!isPathAllowed(filePath)) {
         console.warn('[MediaProtocol] Blocked access to path outside allowed directories:', filePath)
         return new Response('Forbidden', { status: 403 })
-      }
-
-      if (!fs.existsSync(filePath)) {
-        console.warn('[MediaProtocol] File not found:', filePath)
-        return new Response('File Not Found', { status: 404 })
       }
 
       const stat = fs.statSync(filePath)
@@ -811,9 +950,9 @@ app.whenReady().then(async () => {
   }
 
   initDatabase()
-  scanVantageWallpapersFolder()
+  enqueueScan()
   watchVantageWallpapersFolder()
-  const staticAdded = await syncStaticWallpapers()
+  const staticAdded = await enqueueStaticSync()
   if (staticAdded > 0) {
     console.log(`[StaticLibrary] Registered ${staticAdded} static wallpapers`)
   }

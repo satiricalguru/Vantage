@@ -28,6 +28,9 @@ extracted_wallpapers/
 test_naruto.jpg
 
 
+# Generated icon (rebuilt from assets/icon.svg by scripts/build-icon.mjs)
+resources/icons/icon.png
+
 # Environment files
 .env
 .env.local

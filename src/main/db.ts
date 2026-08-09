@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { app } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { INITIAL_WALLPAPERS } from './contentSources'
 import { WallpaperItem, DEFAULT_WALLPAPER_ID } from '../shared/types'
 import { toMediaUrl } from './mediaUrl'
@@ -115,13 +116,13 @@ export function initDatabase(): Database.Database {
       try {
         // Use a temp table for large ID lists to avoid exceeding SQLite's
         // SQLITE_MAX_VARIABLE_NUMBER limit (~999 on some builds).
-        db!.exec('CREATE TEMP TABLE IF NOT EXISTS _kept_ids (id TEXT PRIMARY KEY)')
-        db!.exec('DELETE FROM _kept_ids')
-        const insertKept = db!.prepare('INSERT OR IGNORE INTO _kept_ids (id) VALUES (?)')
+        db!.exec('CREATE TEMP TABLE IF NOT EXISTS _kept_catalog_ids (id TEXT PRIMARY KEY)')
+        db!.exec('DELETE FROM _kept_catalog_ids')
+        const insertKept = db!.prepare('INSERT OR IGNORE INTO _kept_catalog_ids (id) VALUES (?)')
         for (const id of itemIds) insertKept.run(id)
 
-        db!.prepare(`UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (SELECT id FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT IN (SELECT id FROM _kept_ids))`).run(DEFAULT_WALLPAPER_ID)
-        db!.prepare(`DELETE FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT IN (SELECT id FROM _kept_ids)`).run()
+        db!.prepare(`UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (SELECT id FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT IN (SELECT id FROM _kept_catalog_ids))`).run(DEFAULT_WALLPAPER_ID)
+        db!.prepare(`DELETE FROM wallpapers WHERE source != 'user' AND source != 'static' AND id NOT LIKE 'user-%' AND id NOT LIKE 'static-%' AND id NOT IN (SELECT id FROM _kept_catalog_ids)`).run()
       } catch (err) {
         console.warn('[DB Sync] Warning during catalog cleanup:', err)
       }
@@ -202,6 +203,56 @@ function resolveMediaUrl(url: string | undefined | null): string {
   return url
 }
 
+/** Safe parse of the stored color palette; a corrupt row must never brick the whole gallery list. */
+function parseColorPalette(raw: string | null): string[] | undefined {
+  if (!raw) return undefined
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed) && parsed.every((v) => typeof v === 'string') ? (parsed as string[]) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** Basename of a media:// or file:// URL, or null when it is not a local file URL. */
+function mediaUrlBasename(url: string | null | undefined): string | null {
+  if (!url || typeof url !== 'string') return null
+  let localPath: string
+  try {
+    if (url.startsWith('media://')) {
+      localPath = decodeURIComponent(url.replace(/^media:\/+/i, '/'))
+    } else if (url.startsWith('file://')) {
+      localPath = fileURLToPath(url)
+    } else {
+      return null
+    }
+  } catch {
+    return null
+  }
+  return path.basename(localPath)
+}
+
+/**
+ * Every local file basename currently referenced by a wallpaper row (source
+ * and preview URLs). Used by the thumbnail garbage collector: a generated
+ * thumbnail is only safe to delete when *no* DB row points at it anymore —
+ * never when the row merely points at a file outside the managed folder.
+ */
+export function getWallpaperFileReferences(): string[] {
+  const database = initDatabase()
+  const names = new Set<string>()
+  const rows = database.prepare('SELECT previewUrl, sourceUrl FROM wallpapers').all() as {
+    previewUrl: string | null
+    sourceUrl: string | null
+  }[]
+  for (const row of rows) {
+    for (const base of [mediaUrlBasename(row.previewUrl), mediaUrlBasename(row.sourceUrl)]) {
+      if (base) names.add(base)
+    }
+  }
+  return Array.from(names)
+}
+
 export function getAllWallpapers(category?: string, query?: string): WallpaperItem[] {
   const database = initDatabase()
   let sql = 'SELECT * FROM wallpapers'
@@ -252,7 +303,7 @@ export function getAllWallpapers(category?: string, query?: string): WallpaperIt
     previewUrl: resolveMediaUrl(r.previewUrl),
     sourceUrl: resolveMediaUrl(r.sourceUrl),
     generatorId: r.generatorId ?? undefined,
-    colorPalette: r.colorPalette ? JSON.parse(r.colorPalette) : undefined,
+    colorPalette: parseColorPalette(r.colorPalette),
     is_favorite: Boolean(r.is_favorite)
   }))
 }
@@ -275,7 +326,7 @@ export function getWallpaperById(id: string): WallpaperItem | null {
     previewUrl: resolveMediaUrl(row.previewUrl),
     sourceUrl: resolveMediaUrl(row.sourceUrl),
     generatorId: row.generatorId ?? undefined,
-    colorPalette: row.colorPalette ? JSON.parse(row.colorPalette) : undefined,
+    colorPalette: parseColorPalette(row.colorPalette),
     is_favorite: Boolean(row.is_favorite)
   }
 }
@@ -381,18 +432,18 @@ export function pruneUserFolderEntries(keptIds: string[]): void {
   try {
     const prune = database.transaction(() => {
       if (keptIds.length > 0) {
-        database.exec('CREATE TEMP TABLE IF NOT EXISTS _kept_ids (id TEXT PRIMARY KEY)')
-        database.exec('DELETE FROM _kept_ids')
-        const insertKept = database.prepare('INSERT OR IGNORE INTO _kept_ids (id) VALUES (?)')
+        database.exec('CREATE TEMP TABLE IF NOT EXISTS _kept_user_ids (id TEXT PRIMARY KEY)')
+        database.exec('DELETE FROM _kept_user_ids')
+        const insertKept = database.prepare('INSERT OR IGNORE INTO _kept_user_ids (id) VALUES (?)')
         for (const id of keptIds) insertKept.run(id)
 
         database.prepare(
           `UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (
-            SELECT id FROM wallpapers WHERE id LIKE 'user-folder-%' AND id NOT IN (SELECT id FROM _kept_ids)
+            SELECT id FROM wallpapers WHERE id LIKE 'user-folder-%' AND id NOT IN (SELECT id FROM _kept_user_ids)
           )`
         ).run(DEFAULT_WALLPAPER_ID)
         database.prepare(
-          `DELETE FROM wallpapers WHERE id LIKE 'user-folder-%' AND id NOT IN (SELECT id FROM _kept_ids)`
+          `DELETE FROM wallpapers WHERE id LIKE 'user-folder-%' AND id NOT IN (SELECT id FROM _kept_user_ids)`
         ).run()
       } else {
         database.prepare(
@@ -415,18 +466,18 @@ export function pruneStaticWallpapers(keptIds: string[]): void {
   try {
     const prune = database.transaction(() => {
       if (keptIds.length > 0) {
-        database.exec('CREATE TEMP TABLE IF NOT EXISTS _kept_ids (id TEXT PRIMARY KEY)')
-        database.exec('DELETE FROM _kept_ids')
-        const insertKept = database.prepare('INSERT OR IGNORE INTO _kept_ids (id) VALUES (?)')
+        database.exec('CREATE TEMP TABLE IF NOT EXISTS _kept_static_ids (id TEXT PRIMARY KEY)')
+        database.exec('DELETE FROM _kept_static_ids')
+        const insertKept = database.prepare('INSERT OR IGNORE INTO _kept_static_ids (id) VALUES (?)')
         for (const id of keptIds) insertKept.run(id)
 
         database.prepare(
           `UPDATE display_assignments SET wallpaper_id = ? WHERE wallpaper_id IN (
-            SELECT id FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%' AND id NOT IN (SELECT id FROM _kept_ids)
+            SELECT id FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%' AND id NOT IN (SELECT id FROM _kept_static_ids)
           )`
         ).run(DEFAULT_WALLPAPER_ID)
         database.prepare(
-          `DELETE FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%' AND id NOT IN (SELECT id FROM _kept_ids)`
+          `DELETE FROM wallpapers WHERE source = 'static' AND id LIKE 'static-%' AND id NOT IN (SELECT id FROM _kept_static_ids)`
         ).run()
       } else {
         database.prepare(

@@ -48,10 +48,24 @@ export async function generateVideoThumbnail(videoPath: string): Promise<string 
       await execFileAsync('/usr/bin/qlmanage', ['-t', '-s', '1280', '-o', thumbDir, videoPath])
       // qlmanage writes <basename>.png; normalize to the derived stable name
       const qlOutput = path.join(thumbDir, `${path.basename(videoPath)}.png`)
-      if (fs.existsSync(qlOutput) && fs.statSync(qlOutput).size > 0) {
-        fs.copyFileSync(qlOutput, targetThumbPath)
-        console.log('[ThumbnailGenerator] Generated first frame thumbnail:', targetThumbPath)
-        return targetThumbPath
+      if (fs.existsSync(qlOutput)) {
+        let copied = false
+        try {
+          if (fs.statSync(qlOutput).size > 0) {
+            fs.copyFileSync(qlOutput, targetThumbPath)
+            copied = true
+          }
+        } finally {
+          try {
+            fs.unlinkSync(qlOutput)
+          } catch {
+            /* ignore cleanup failure */
+          }
+        }
+        if (copied && fs.existsSync(targetThumbPath) && fs.statSync(targetThumbPath).size > 0) {
+          console.log('[ThumbnailGenerator] Generated first frame thumbnail:', targetThumbPath)
+          return targetThumbPath
+        }
       }
     } catch (err) {
       console.warn('[ThumbnailGenerator] qlmanage failed:', err)
@@ -78,4 +92,60 @@ export async function generateVideoThumbnail(videoPath: string): Promise<string 
   }
 
   return null
+}
+
+/**
+ * Deletes generated thumbnails that are no longer referenced by any wallpaper
+ * row in the database.
+ *
+ * IMPORTANT: the "active" set is the basenames of files the DB currently
+ * references (via `getWallpaperFileReferences`), NOT the contents of the
+ * managed folder. Folder contents must not be used as the source of truth —
+ * a wallpaper can legitimately live somewhere the folder scan does not cover,
+ * and deleting its thumbnail would make its gallery tile vanish.
+ *
+ * Files written within the last few minutes are left alone so an in-flight
+ * thumbnail generation is never pruned mid-write. Only files matching the
+ * generated naming scheme `<name>-<16 hex>.png|.jpg` are considered.
+ * Returns the number of files removed.
+ */
+export function pruneOrphanThumbnails(referencedBasenames: string[]): number {
+  const thumbDir = path.join(app.getPath('userData'), 'thumbnails')
+  if (!fs.existsSync(thumbDir)) return 0
+
+  const referenced = new Set(referencedBasenames)
+  const thumbPattern = /^.+-\w{16}\.(png|jpg)$/i
+  const FRESH_WINDOW_MS = 8 * 60 * 1000
+  const now = Date.now()
+  let removed = 0
+
+  let entries: string[]
+  try {
+    entries = fs.readdirSync(thumbDir)
+  } catch {
+    return 0
+  }
+
+  for (const entry of entries) {
+    if (!thumbPattern.test(entry)) continue
+    if (referenced.has(entry)) continue
+    // Never touch files that may still be mid-generation
+    let mtimeMs: number
+    try {
+      mtimeMs = fs.statSync(path.join(thumbDir, entry)).mtimeMs
+    } catch {
+      continue
+    }
+    if (now - mtimeMs < FRESH_WINDOW_MS) continue
+    try {
+      fs.unlinkSync(path.join(thumbDir, entry))
+      removed++
+    } catch {
+      /* best-effort */
+    }
+  }
+  if (removed > 0) {
+    console.log(`[ThumbnailGenerator] Pruned ${removed} unreferenced thumbnail(s)`)
+  }
+  return removed
 }

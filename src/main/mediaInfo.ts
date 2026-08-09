@@ -40,20 +40,15 @@ export async function getMediaDimensions(filePath: string): Promise<Dimensions> 
           const scanLimit = 4 * 1024 * 1024
           const chunks: Buffer[] = [buffer]
           let scanned = buffer.length
-          const fd2 = await fs.promises.open(filePath, 'r')
-          try {
-            let seek = buffer.length
-            while (seek < scanLimit) {
-              const next = Buffer.alloc(256 * 1024)
-              const { bytesRead } = await fd2.read(next, 0, next.length, seek)
-              if (bytesRead === 0) break
-              chunks.push(next.subarray(0, bytesRead))
-              scanned += bytesRead
-              seek += bytesRead
-              if (scanned >= scanLimit) break
-            }
-          } finally {
-            await fd2.close()
+          let seek = buffer.length
+          while (seek < scanLimit) {
+            const next = Buffer.alloc(256 * 1024)
+            const { bytesRead } = await fd.read(next, 0, next.length, seek)
+            if (bytesRead === 0) break
+            chunks.push(next.subarray(0, bytesRead))
+            scanned += bytesRead
+            seek += bytesRead
+            if (scanned >= scanLimit) break
           }
           const fullBuf = Buffer.concat(chunks)
           let offset = 2

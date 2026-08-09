@@ -13,11 +13,23 @@ export const VideoLayer: React.FC<VideoLayerProps> = ({ src, isPlaying, performa
     const video = videoRef.current
     if (!video) return
 
-    if (isPlaying && performanceMode !== 'pause') {
-      video.play().catch(() => { /* expected in some contexts */ })
-    } else {
-      video.pause()
+    const shouldPlay = isPlaying && performanceMode !== 'pause'
+    const tryPlay = () => {
+      if (shouldPlay) {
+        video.play().catch(() => { /* expected before data is loaded */ })
+      }
     }
+
+    if (!shouldPlay) {
+      video.pause()
+      return
+    }
+
+    // play() rejects until the new source has at least started loading; retry
+    // once the element reports data instead of swallowing the failure forever.
+    tryPlay()
+    video.addEventListener('loadeddata', tryPlay)
+    return () => video.removeEventListener('loadeddata', tryPlay)
   }, [isPlaying, performanceMode, src])
 
   useEffect(() => {
@@ -40,7 +52,9 @@ export const VideoLayer: React.FC<VideoLayerProps> = ({ src, isPlaying, performa
       video.load()
       video.currentTime = currentPos
       if (isPlaying && performanceMode !== 'pause') {
-        video.play().catch(() => {})
+        const retryPlay = () => video.play().catch(() => {})
+        video.addEventListener('loadeddata', retryPlay, { once: true })
+        retryPlay()
       }
     })
   }, [isPlaying, performanceMode])

@@ -1,6 +1,7 @@
 import { BrowserWindow, screen, Display } from 'electron'
 import path from 'node:path'
 import { getDisplayAssignment, getWallpaperById, setPerformanceMode } from './db'
+import { hardenWindowNavigation } from './windowSecurity'
 
 const wallpaperWindows = new Map<number, BrowserWindow>()
 let isGlobalPlaying = true
@@ -52,6 +53,7 @@ export function createWallpaperWindow(display: Display): BrowserWindow {
     skipTransformProcessType: true
   })
 
+  hardenWindowNavigation(win, wallpaperRendererUrlFor(display.id))
   win.loadURL(wallpaperRendererUrlFor(display.id))
   win.showInactive()
 

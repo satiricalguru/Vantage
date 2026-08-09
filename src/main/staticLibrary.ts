@@ -126,7 +126,6 @@ function scanDir(dir: string): ScannedImage[] {
 
 /** Scan all static source folders into a manifest of WallpaperItems */
 export async function buildStaticManifest(): Promise<StaticManifest> {
-  const items: WallpaperItem[] = []
   const presentIds: string[] = []
   const seen = new Set<string>()
 
@@ -147,15 +146,15 @@ export async function buildStaticManifest(): Promise<StaticManifest> {
     }
   }
 
-  // Probe image dimensions with a small worker pool (header reads are cheap,
-  // but hundreds of files should not serialize into a slow startup).
+  const items: WallpaperItem[] = new Array(tasks.length)
   const CONCURRENCY = 6
   let cursor = 0
   const workers = Array.from({ length: Math.min(CONCURRENCY, tasks.length) }, async () => {
     while (cursor < tasks.length) {
-      const task = tasks[cursor++]
+      const taskIdx = cursor++
+      const task = tasks[taskIdx]
       const dims = await getMediaDimensions(task.filePath)
-      items.push({
+      items[taskIdx] = {
         id: task.id,
         title: task.base,
         category: 'static',
@@ -166,12 +165,12 @@ export async function buildStaticManifest(): Promise<StaticManifest> {
         source: 'static',
         license: task.license,
         attribution: task.attribution
-      })
+      }
     }
   })
   await Promise.all(workers)
 
-  return { items, presentIds }
+  return { items: items.filter((item): item is WallpaperItem => Boolean(item)), presentIds }
 }
 
 function licenseAndAttribution(dir: string): { license: string; attribution: string } {

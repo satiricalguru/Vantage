@@ -17,67 +17,103 @@ export const Settings: React.FC = () => {
 
   const [cacheStatus, setCacheStatus] = useState<CacheStatus | null>(null)
 
-  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingSaveRef = useRef<Partial<AppSettings> | null>(null)
 
-  const saveSettingsDebounced = (partial: Partial<AppSettings>) => {
-    setSettingsState((prev) => ({ ...prev, ...partial }))
+  const saveSettingsDebounced = (patch: Partial<AppSettings>) => {
+    pendingSaveRef.current = { ...pendingSaveRef.current, ...patch }
+    setSettingsState((prev) => ({ ...prev, ...patch }))
     if (saveTimeout.current) clearTimeout(saveTimeout.current)
     saveTimeout.current = setTimeout(() => {
       saveTimeout.current = null
-      if (window.galleryApi) window.galleryApi.setSettings(partial)
+      const toSend = pendingSaveRef.current
+      pendingSaveRef.current = null
+      if (toSend && window.galleryApi) window.galleryApi.setSettings(toSend).catch(() => {})
     }, 400)
   }
 
   useEffect(() => {
+    // Flush any pending debounced change on unmount
     return () => {
       if (saveTimeout.current) {
         clearTimeout(saveTimeout.current)
         saveTimeout.current = null
       }
+      const toSend = pendingSaveRef.current
+      if (toSend && window.galleryApi) window.galleryApi.setSettings(toSend).catch(() => {})
+      pendingSaveRef.current = null
     }
   }, [])
 
   useEffect(() => {
     if (window.galleryApi) {
-      window.galleryApi.getSettings().then((res) => {
-        if (res) setSettingsState(res)
-      })
-      window.galleryApi.getCacheStatus().then((status) => {
-        if (status) setCacheStatus(status)
-      })
+      window.galleryApi
+        .getSettings()
+        .then((res) => {
+          if (res) setSettingsState(res)
+        })
+        .catch(() => {})
+      window.galleryApi
+        .getCacheStatus()
+        .then((status) => {
+          if (status) setCacheStatus(status)
+        })
+        .catch(() => {})
     }
   }, [])
 
   const handlePerformanceChange = async (displayId: number, mode: string) => {
-    if (window.galleryApi) {
+    if (!window.galleryApi) return
+    try {
       await window.galleryApi.setPerformanceMode(displayId, mode)
-      await fetchDisplays()
+    } catch (err) {
+      console.warn('[Settings] Failed to set performance mode for display', displayId, err)
     }
+    await fetchDisplays().catch(() => {})
   }
 
-  const handleSaveSettings = async (partial: Partial<AppSettings>) => {
-    const updated = { ...settings, ...partial }
-    setSettingsState(updated)
+const handleSaveSettings = async (partial: Partial<AppSettings>) => {
+    // Cancel any pending debounced save and fold it into this immediate write
+    // so an older debounced partial can never land after a newer one.
+    const merged = { ...(pendingSaveRef.current ?? {}), ...partial }
+    pendingSaveRef.current = null
+    if (saveTimeout.current) {
+      clearTimeout(saveTimeout.current)
+      saveTimeout.current = null
+    }
+    // Use the functional update: rapid successive saves must not compute from
+    // the same stale base and drop the last toggle.
+    setSettingsState((prev) => ({ ...prev, ...partial }))
     if (window.galleryApi) {
-      await window.galleryApi.setSettings(partial)
+      try {
+        await window.galleryApi.setSettings(merged)
+      } catch (err) {
+        console.warn('[Settings] Failed to save settings:', err)
+      }
     }
   }
 
   const handleClearCache = async () => {
-    if (window.galleryApi) {
+    if (!window.galleryApi) return
+    try {
       const bytes = await window.galleryApi.clearCache()
       setClearedBytes(bytes)
       const updatedStatus = await window.galleryApi.getCacheStatus()
       if (updatedStatus) setCacheStatus(updatedStatus)
+    } catch (err) {
+      console.warn('[Settings] Failed to clear cache:', err)
     }
   }
 
   const handleFreeUpMemory = async () => {
-    if (window.galleryApi?.freeUpMemory) {
+    if (!window.galleryApi?.freeUpMemory) return
+    try {
       const res = await window.galleryApi.freeUpMemory()
       setClearedBytes(res.freedMb * 1024 * 1024)
       const updatedStatus = await window.galleryApi.getCacheStatus()
       if (updatedStatus) setCacheStatus(updatedStatus)
+    } catch (err) {
+      console.warn('[Settings] Failed to free memory:', err)
     }
   }
 
