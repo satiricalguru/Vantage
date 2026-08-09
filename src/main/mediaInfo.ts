@@ -82,16 +82,38 @@ export async function getMediaDimensions(filePath: string): Promise<Dimensions> 
       }
     }
 
-    // 2. Video dimensions via macOS mdls
-    if (process.platform === 'darwin' && ['.mp4', '.mov', '.webm', '.m4v'].includes(ext)) {
+    // 2. Video dimensions via ffprobe / macOS mdls
+    if (['.mp4', '.mov', '.webm', '.m4v', '.mkv'].includes(ext)) {
+      // 2a. Try ffprobe first (works accurately for all cached/temp files)
       try {
-        const { stdout } = await execFileAsync('mdls', ['-name', 'kMDItemPixelWidth', '-name', 'kMDItemPixelHeight', filePath])
-        const wMatch = stdout.match(/kMDItemPixelWidth\s*=\s*(\d+)/)
-        const hMatch = stdout.match(/kMDItemPixelHeight\s*=\s*(\d+)/)
-        if (wMatch && hMatch) {
-          return { width: parseInt(wMatch[1], 10), height: parseInt(hMatch[1], 10) }
+        const { stdout } = await execFileAsync('ffprobe', [
+          '-v', 'error',
+          '-select_streams', 'v:0',
+          '-show_entries', 'stream=width,height',
+          '-of', 'csv=s=x:p=0',
+          filePath
+        ])
+        const match = stdout.trim().match(/^(\d+)x(\d+)$/)
+        if (match) {
+          const width = parseInt(match[1], 10)
+          const height = parseInt(match[2], 10)
+          if (width > 0 && height > 0) return { width, height }
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ffprobe unavailable */
+      }
+
+      // 2b. macOS mdls fallback (works for indexed user files outside Caches)
+      if (process.platform === 'darwin') {
+        try {
+          const { stdout } = await execFileAsync('mdls', ['-name', 'kMDItemPixelWidth', '-name', 'kMDItemPixelHeight', filePath])
+          const wMatch = stdout.match(/kMDItemPixelWidth\s*=\s*(\d+)/)
+          const hMatch = stdout.match(/kMDItemPixelHeight\s*=\s*(\d+)/)
+          if (wMatch && hMatch && parseInt(wMatch[1], 10) > 0) {
+            return { width: parseInt(wMatch[1], 10), height: parseInt(hMatch[1], 10) }
+          }
+        } catch { /* ignore */ }
+      }
     }
   } catch (err) {
     console.warn('[MediaInfo] Could not read dimensions for:', filePath, err)
