@@ -272,6 +272,39 @@ async function syncLockScreenAndSystemWallpaper(): Promise<void> {
     }
     console.log('[ScreenSaver] Lock screen media synchronized:', screenSaverMedia)
   }
+
+  pruneHighResFrames(systemWallpaperPath)
+}
+
+function pruneHighResFrames(activePath: string | null): void {
+  const cacheDir = path.join(app.getPath('userData'), 'highres-frames')
+  if (!fs.existsSync(cacheDir)) return
+  try {
+    const activeFile = activePath ? path.basename(activePath) : null
+    const files = fs.readdirSync(cacheDir)
+    const now = Date.now()
+    const FRESH_WINDOW_MS = 5 * 60 * 1000
+    let pruned = 0
+    for (const file of files) {
+      if (!file.startsWith('frame-')) continue
+      if (activeFile && file === activeFile) continue
+      const fullPath = path.join(cacheDir, file)
+      try {
+        const stat = fs.statSync(fullPath)
+        if (now - stat.mtimeMs > FRESH_WINDOW_MS) {
+          fs.unlinkSync(fullPath)
+          pruned++
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    if (pruned > 0) {
+      console.log(`[SystemWallpaper] Pruned ${pruned} outdated high-res frame(s)`)
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 async function activateVantageScreenSaver(installedPath: string): Promise<void> {

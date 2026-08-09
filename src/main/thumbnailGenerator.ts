@@ -129,8 +129,7 @@ export function pruneOrphanThumbnails(referencedBasenames: string[]): number {
   if (!fs.existsSync(thumbDir)) return 0
 
   const referenced = new Set(referencedBasenames)
-  const thumbPattern = /^.+-\w{16}\.(png|jpg)$/i
-  const FRESH_WINDOW_MS = 8 * 60 * 1000
+  const FRESH_WINDOW_MS = 5 * 60 * 1000
   const now = Date.now()
   let removed = 0
 
@@ -142,7 +141,6 @@ export function pruneOrphanThumbnails(referencedBasenames: string[]): number {
   }
 
   for (const entry of entries) {
-    if (!thumbPattern.test(entry)) continue
     if (referenced.has(entry)) continue
     // Never touch files that may still be mid-generation
     let mtimeMs: number
