@@ -6416,22 +6416,6 @@
     "attribution": "MotionBGS Ai-Art Collection"
   },
   {
-    "id": "motionbgs-sunset-voyage-nami",
-    "title": "Sunset Voyage Nami",
-    "category": "anime",
-    "type": "video",
-    "previewUrl": "resources/thumbnails/motionbgs-sunset-voyage-nami.jpg",
-    "sourceUrl": "https://motionbgs.com/media/7936/sunset-voyage-nami.3840x2160.mp4",
-    "resolution": {
-      "width": 3840,
-      "height": 2160
-    },
-    "duration": 20,
-    "source": "ai",
-    "license": "MotionBGS Free License",
-    "attribution": "MotionBGS Ai-Art Collection"
-  },
-  {
     "id": "motionbgs-nami-ocean-breeze",
     "title": "Nami Ocean Breeze",
     "category": "anime",
@@ -8054,22 +8038,6 @@
     "type": "video",
     "previewUrl": "resources/thumbnails/motionbgs-jin-woo-attack.jpg",
     "sourceUrl": "https://motionbgs.com/media/6388/jin-woo-attack.3840x2160.mp4",
-    "resolution": {
-      "width": 3840,
-      "height": 2160
-    },
-    "duration": 20,
-    "source": "ai",
-    "license": "MotionBGS Free License",
-    "attribution": "MotionBGS Ai-Art Collection"
-  },
-  {
-    "id": "motionbgs-sung-jin-woo-season-2",
-    "title": "Sung Jin-Woo (Season 2)",
-    "category": "anime",
-    "type": "video",
-    "previewUrl": "resources/thumbnails/motionbgs-sung-jin-woo-season-2.jpg",
-    "sourceUrl": "https://motionbgs.com/media/6387/sung-jin-woo-season-2.3840x2160.mp4",
     "resolution": {
       "width": 3840,
       "height": 2160
