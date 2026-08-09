@@ -92,7 +92,7 @@ export async function generateVideoThumbnail(videoPath: string): Promise<string 
     const jpgTarget = path.join(thumbDir, `${stem}.jpg`)
     await execFileAsync('ffmpeg', [
       '-y',
-      '-ss', '00:00:00',
+      '-ss', '00:00:01',
       '-i', videoPath,
       '-vframes', '1',
       '-q:v', '2',

@@ -56,7 +56,7 @@ if (process.platform === 'darwin') {
 }
 
 try {
-  execFileSync('ffmpeg', ['-y', '-ss', '00:00:00', '-i', inputPath, '-vframes', '1', '-q:v', '2', outputPath], { stdio: 'ignore' })
+  execFileSync('ffmpeg', ['-y', '-ss', '00:00:01', '-i', inputPath, '-vframes', '1', '-q:v', '2', outputPath], { stdio: 'ignore' })
   if (fs.existsSync(outputPath)) {
     console.log(`[Thumbnail] Created thumbnail via ffmpeg: ${outputPath}`)
     process.exit(0)
