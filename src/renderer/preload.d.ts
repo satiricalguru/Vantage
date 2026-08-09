@@ -16,6 +16,7 @@ declare global {
       openFolder: () => Promise<string>
       scanLocalFolder: () => Promise<number>
       clearCache: () => Promise<number>
+      freeUpMemory?: () => Promise<{ freedMb: number }>
       getCacheStatus: () => Promise<CacheStatus>
       setLoginAtLogin: (openAtLogin: boolean) => Promise<boolean>
       openExternal: (url: string) => void
@@ -31,6 +32,7 @@ declare global {
       onPlaybackStateChange: (callback: (isPlaying: boolean) => void) => () => void
       ensureCached: (url: string) => Promise<string>
       onCacheProgress: (callback: (data: { url: string; received: number; total: number; pct: number }) => void) => () => void
+      onMemoryPurge?: (callback: () => void) => () => void
     }
   }
 }

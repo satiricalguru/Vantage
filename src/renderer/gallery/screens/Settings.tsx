@@ -72,6 +72,15 @@ export const Settings: React.FC = () => {
     }
   }
 
+  const handleFreeUpMemory = async () => {
+    if (window.galleryApi?.freeUpMemory) {
+      const res = await window.galleryApi.freeUpMemory()
+      setClearedBytes(res.freedMb * 1024 * 1024)
+      const updatedStatus = await window.galleryApi.getCacheStatus()
+      if (updatedStatus) setCacheStatus(updatedStatus)
+    }
+  }
+
   const handleSetupScreenSaver = async () => {
     if (!window.galleryApi || screenSaverBusy) return
     setScreenSaverBusy(true)
@@ -241,6 +250,22 @@ export const Settings: React.FC = () => {
             onChange={(e) => saveSettingsDebounced({ maxCacheSizeGb: Number(e.target.value) })}
             className="w-full accent-glow cursor-pointer"
           />
+        </div>
+
+        <div className="flex items-center justify-between p-3 bg-void border border-line rounded-lg">
+          <div>
+            <div className="text-sm font-semibold text-ink">Free Up System Memory</div>
+            <div className="text-xs text-ink-dim">
+              Purges V8 RAM cache, flushes wallpaper video buffers, and optimizes system memory.
+            </div>
+          </div>
+          <button
+            onClick={handleFreeUpMemory}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-glow/10 border border-glow/30 text-xs font-mono text-glow hover:bg-glow/20 transition"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>Free Up RAM</span>
+          </button>
         </div>
 
         <div className="flex items-center justify-between p-3 bg-void border border-line rounded-lg">

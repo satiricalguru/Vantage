@@ -23,5 +23,10 @@ contextBridge.exposeInMainWorld('wallpaperApi', {
     const handler = (_event: Electron.IpcRendererEvent, data: { url: string; received: number; total: number; pct: number }) => callback(data)
     ipcRenderer.on('cache:progress', handler)
     return () => ipcRenderer.removeListener('cache:progress', handler)
+  },
+  onMemoryPurge: (callback: () => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('memory:purge', handler)
+    return () => ipcRenderer.removeListener('memory:purge', handler)
   }
 })

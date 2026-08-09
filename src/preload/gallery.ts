@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('galleryApi', {
   openFolder: () => ipcRenderer.invoke('wallpaper:open-folder'),
   scanLocalFolder: () => ipcRenderer.invoke('wallpaper:scan-local-folder'),
   clearCache: () => ipcRenderer.invoke('cache:clear'),
+  freeUpMemory: () => ipcRenderer.invoke('memory:free'),
   getCacheStatus: () => ipcRenderer.invoke('cache:status'),
   setLoginAtLogin: (openAtLogin: boolean) =>
     ipcRenderer.invoke('settings:set-login-at-login', openAtLogin),

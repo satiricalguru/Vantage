@@ -1,6 +1,6 @@
 import { BrowserWindow, screen, Display } from 'electron'
 import path from 'node:path'
-import { getDisplayAssignment, getWallpaperById } from './db'
+import { getDisplayAssignment, getWallpaperById, setPerformanceMode } from './db'
 
 const wallpaperWindows = new Map<number, BrowserWindow>()
 let isGlobalPlaying = true
@@ -92,6 +92,11 @@ export function syncWallpaperWindows(): void {
     }
   }
 
+  notifyDisplayStateChanged()
+}
+
+export function notifyDisplayStateChanged(): void {
+  const displays = screen.getAllDisplays()
   const galleryWin = galleryWindowGetter ? galleryWindowGetter() : null
   if (galleryWin && !galleryWin.isDestroyed()) {
     const list = displays.map((d) => {
@@ -129,6 +134,45 @@ export function setPerformanceModeForDisplay(displayId: number, mode: string): v
   }
 }
 
+export function getGlobalPerformanceMode(): string {
+  const displays = screen.getAllDisplays()
+  if (displays.length > 0) {
+    return getDisplayAssignment(String(displays[0].id)).performanceMode || 'balanced'
+  }
+  return 'balanced'
+}
+
+export function setGlobalPerformanceMode(mode: string): void {
+  const displays = screen.getAllDisplays()
+  for (const display of displays) {
+    setPerformanceMode(String(display.id), mode)
+    setPerformanceModeForDisplay(display.id, mode)
+  }
+  notifyDisplayStateChanged()
+}
+
+export function purgeWallpaperMemory(): void {
+  for (const win of wallpaperWindows.values()) {
+    if (!win.isDestroyed()) {
+      win.webContents.send('memory:purge')
+      try {
+        win.webContents.session.clearCache()
+      } catch {
+        /* best effort */
+      }
+    }
+  }
+  const galleryWin = galleryWindowGetter ? galleryWindowGetter() : null
+  if (galleryWin && !galleryWin.isDestroyed()) {
+    galleryWin.webContents.send('memory:purge')
+    try {
+      galleryWin.webContents.session.clearCache()
+    } catch {
+      /* best effort */
+    }
+  }
+}
+
 export function setGlobalPlaybackState(isPlaying: boolean): void {
   isGlobalPlaying = isPlaying
   for (const win of wallpaperWindows.values()) {
@@ -157,3 +201,4 @@ export function setupDisplayListeners(): void {
   screen.on('display-removed', syncWallpaperWindows)
   screen.on('display-metrics-changed', syncWallpaperWindows)
 }
+

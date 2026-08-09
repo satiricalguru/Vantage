@@ -31,6 +31,20 @@ export const VideoLayer: React.FC<VideoLayerProps> = ({ src, isPlaying, performa
     }
   }, [performanceMode])
 
+  useEffect(() => {
+    if (!window.wallpaperApi?.onMemoryPurge) return
+    return window.wallpaperApi.onMemoryPurge(() => {
+      const video = videoRef.current
+      if (!video) return
+      const currentPos = video.currentTime
+      video.load()
+      video.currentTime = currentPos
+      if (isPlaying && performanceMode !== 'pause') {
+        video.play().catch(() => {})
+      }
+    })
+  }, [isPlaying, performanceMode])
+
   return (
     <div className="w-full h-full relative overflow-hidden bg-black">
       <video

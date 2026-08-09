@@ -1,7 +1,13 @@
 import { Tray, Menu, app, nativeImage } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
-import { getGlobalPlaybackState, setGlobalPlaybackState } from './wallpaperWindow'
+import {
+  getGlobalPlaybackState,
+  setGlobalPlaybackState,
+  getGlobalPerformanceMode,
+  setGlobalPerformanceMode
+} from './wallpaperWindow'
+import { freeUpMemory } from './memoryManager'
 import store from './store'
 
 let tray: Tray | null = null
@@ -11,6 +17,8 @@ export function updateTrayMenu(): void {
   if (!tray) return
 
   const isPlaying = getGlobalPlaybackState()
+  const currentPerfMode = getGlobalPerformanceMode()
+
   const contextMenu = Menu.buildFromTemplate([
     {
       label: 'Vantage Live Wallpapers',
@@ -18,7 +26,7 @@ export function updateTrayMenu(): void {
     },
     { type: 'separator' },
     {
-      label: 'Open Gallery & Controls',
+      label: 'Open Gallery && Controls',
       click: () => {
         if (currentOnOpenGallery) currentOnOpenGallery()
       }
@@ -32,6 +40,46 @@ export function updateTrayMenu(): void {
     },
     { type: 'separator' },
     {
+      label: '⚡ Free Up Memory',
+      click: async () => {
+        await freeUpMemory()
+        updateTrayMenu()
+      }
+    },
+    {
+      label: 'Performance Mode',
+      submenu: [
+        {
+          label: 'High Quality (60 FPS)',
+          type: 'radio',
+          checked: currentPerfMode === 'quality',
+          click: () => {
+            setGlobalPerformanceMode('quality')
+            updateTrayMenu()
+          }
+        },
+        {
+          label: 'Balanced (30 FPS)',
+          type: 'radio',
+          checked: currentPerfMode === 'balanced',
+          click: () => {
+            setGlobalPerformanceMode('balanced')
+            updateTrayMenu()
+          }
+        },
+        {
+          label: 'Battery Saver (15 FPS)',
+          type: 'radio',
+          checked: currentPerfMode === 'battery-saver',
+          click: () => {
+            setGlobalPerformanceMode('battery-saver')
+            updateTrayMenu()
+          }
+        }
+      ]
+    },
+    { type: 'separator' },
+    {
       label: 'Launch at Login',
       type: 'checkbox',
       checked: app.getLoginItemSettings().openAtLogin,
@@ -40,7 +88,7 @@ export function updateTrayMenu(): void {
         try {
           store.set('openAtLogin', menuItem.checked)
         } catch {
-          // store write is best-effort; the OS login item is authoritative
+          // store write is best-effort; OS login item is authoritative
         }
       }
     },

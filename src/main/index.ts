@@ -17,6 +17,7 @@ import { installVantageScreenSaver, setupVantageScreenSaver, syncSelectedScreenS
 
 import { generateVideoThumbnail } from './thumbnailGenerator'
 import { getMediaDimensions } from './mediaInfo'
+import { freeUpMemory } from './memoryManager'
 
 // Global safety nets — log diagnostics for truly unexpected failures so they
 // never disappear silently into the void.
@@ -553,6 +554,11 @@ function registerIpcHandlers(): void {
   ipcMain.handle('cache:clear', (event) => {
     requireTrustedIpcSender(event)
     return clearCache()
+  })
+
+  ipcMain.handle('memory:free', (event) => {
+    requireTrustedIpcSender(event)
+    return freeUpMemory()
   })
 
   ipcMain.handle('cache:status', (event) => {
