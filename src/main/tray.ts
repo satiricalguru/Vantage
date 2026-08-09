@@ -40,7 +40,7 @@ export function updateTrayMenu(): void {
     },
     { type: 'separator' },
     {
-      label: '⚡ Free Up Memory',
+      label: 'Free Up Memory',
       click: async () => {
         await freeUpMemory()
         updateTrayMenu()
