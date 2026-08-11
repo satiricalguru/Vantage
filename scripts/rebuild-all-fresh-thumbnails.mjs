@@ -48,8 +48,23 @@ async function worker() {
     const targetPath = path.join(repoThumbDir, `${item.id}.jpg`)
 
     try {
+      const localWallpaperPath = path.resolve('resources/wallpapers', `${item.id.replace('wallpaperx-', '').toUpperCase()}.mp4`)
+      if (fs.existsSync(localWallpaperPath)) {
+        await execFileAsync('ffmpeg', [
+          '-y',
+          '-ss', '00:00:01',
+          '-i', localWallpaperPath,
+          '-vf', 'scale=1920:-1:flags=lanczos',
+          '-vframes', '1',
+          '-q:v', '5',
+          targetPath
+        ])
+        if (fs.existsSync(targetPath) && fs.statSync(targetPath).size > 0) {
+          extractedCount++
+        }
+      }
       // Case A: Item has a remote video sourceUrl
-      if (item.sourceUrl && item.sourceUrl.startsWith('http')) {
+      else if (item.sourceUrl && item.sourceUrl.startsWith('http')) {
         await execFileAsync('ffmpeg', [
           '-y',
           '-ss', '00:00:01',
