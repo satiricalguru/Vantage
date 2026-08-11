@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { execFile } from 'node:child_process'
+import { execFile, execFileSync } from 'node:child_process'
 import { promisify } from 'node:util'
 
 const execFileAsync = promisify(execFile)
@@ -30,7 +30,6 @@ console.log(`[ExtractVideoFrames] Found ${highResItems.length} 4K/2K catalog vid
 // Function to get current image pixel width via sips
 function getImageWidth(filePath) {
   try {
-    const { execFileSync } = require('child_process')
     const out = execFileSync('sips', ['-g', 'pixelWidth', filePath], { encoding: 'utf8' })
     const match = out.match(/pixelWidth:\s*(\d+)/)
     return match ? parseInt(match[1], 10) : 0

@@ -20,6 +20,9 @@ export const App: React.FC = () => {
   const wallpaperRef = useRef<WallpaperItem | null>(null)
 
   const applyPlayback = useCallback(async (item: WallpaperItem, { force = false } = {}) => {
+    // Invalidate every prior resolution before handling a new selection. Local
+    // images and videos must also cancel a pending remote-video download.
+    const token = ++applyTokenRef.current
     const isRemoteVideo = item.type === 'video' && /^https?:\/\//i.test(item.sourceUrl || '')
 
     // Skip re-applying the identical wallpaper unless forced (e.g. memory purge).
@@ -35,7 +38,6 @@ export const App: React.FC = () => {
       return
     }
 
-    const token = ++applyTokenRef.current
     setPlaySrc('')
     setDownloadPct(0)
     downloadUrlRef.current = item.sourceUrl

@@ -105,6 +105,49 @@ function emitProgress(url: string, received: number, total: number, pct: number)
 
 const pending = new Map<string, Promise<string>>()
 const controllers = new Map<string, AbortController>()
+const MAX_CONCURRENT_DOWNLOADS = 1
+let activeDownloads = 0
+
+interface DownloadWaiter {
+  controller: AbortController
+  resolve: (release: () => void) => void
+  reject: (error: Error) => void
+}
+
+const downloadWaiters: DownloadWaiter[] = []
+
+function acquireDownloadSlot(controller: AbortController): Promise<() => void> {
+  const release = () => {
+    activeDownloads--
+    while (downloadWaiters.length > 0) {
+      const waiter = downloadWaiters.shift()!
+      if (waiter.controller.signal.aborted) {
+        waiter.reject(new Error('Download cancelled'))
+        continue
+      }
+      activeDownloads++
+      waiter.resolve(release)
+      break
+    }
+  }
+
+  if (controller.signal.aborted) return Promise.reject(new Error('Download cancelled'))
+  if (activeDownloads < MAX_CONCURRENT_DOWNLOADS) {
+    activeDownloads++
+    return Promise.resolve(release)
+  }
+
+  return new Promise((resolve, reject) => {
+    const waiter: DownloadWaiter = { controller, resolve, reject }
+    const onAbort = () => {
+      const index = downloadWaiters.indexOf(waiter)
+      if (index >= 0) downloadWaiters.splice(index, 1)
+      reject(new Error('Download cancelled'))
+    }
+    controller.signal.addEventListener('abort', onAbort, { once: true })
+    downloadWaiters.push(waiter)
+  })
+}
 
 export function getCachedFilePath(url: string): string | null {
   if (!isRemoteHttpUrl(url)) return null
@@ -166,10 +209,12 @@ export function ensureCached(url: string): Promise<string> {
   controllers.set(url, controller)
 
   const promise = (async () => {
+    const timeout = setTimeout(() => controller.abort(), CACHE_DOWNLOAD_TIMEOUT_MS)
+    let release: (() => void) | null = null
     let resp: Response
     let writeStream: fs.WriteStream | null = null
-    const timeout = setTimeout(() => controller.abort(), CACHE_DOWNLOAD_TIMEOUT_MS)
     try {
+      release = await acquireDownloadSlot(controller)
       resp = await net.fetch(url, {
         signal: controller.signal,
         redirect: 'error'
@@ -186,9 +231,15 @@ export function ensureCached(url: string): Promise<string> {
       }
 
       const total = Number(resp.headers.get('content-length')) || 0
-      if (total > MAX_CACHE_DOWNLOAD_BYTES) {
-        throw new Error(`Cached response exceeds ${MAX_CACHE_DOWNLOAD_BYTES} bytes`)
+      // Reserve the maximum permitted payload, not the declared length: an
+      // untrusted server can omit or underreport Content-Length.
+      const reservationBytes = MAX_CACHE_DOWNLOAD_BYTES
+      if (reservationBytes > cacheLimitBytes) {
+        throw new Error(`Cached response exceeds configured cache limit of ${cacheLimitBytes} bytes`)
       }
+      // With one active transfer, evict before creating a .part file so active
+      // downloads plus completed entries can never grow beyond the configured cap.
+      evictToLimit(Math.max(0, cacheLimitBytes - reservationBytes))
 
       let received = 0
       try {
@@ -236,6 +287,7 @@ export function ensureCached(url: string): Promise<string> {
       throw err
     } finally {
       clearTimeout(timeout)
+      release?.()
     }
 
     fs.renameSync(partPath, finalPath)
@@ -279,9 +331,8 @@ export function evictToLimit(maxBytes: number, dir = getCacheDir()): void {
   if (total <= maxBytes) return
 
   entries.sort((a, b) => a.mtime - b.mtime)
-  const floor = Math.max(CACHE_FLOOR_BYTES, maxBytes * 0.1)
   for (const entry of entries) {
-    if (total <= Math.max(floor, maxBytes)) break
+    if (total <= maxBytes) break
     try {
       fs.unlinkSync(entry.filePath)
       total -= entry.size
@@ -302,11 +353,13 @@ export function getCacheStatus(): {
   let count = 0
   try {
     for (const file of fs.readdirSync(dir)) {
-      if (file.endsWith('.part')) continue
       try {
         const stat = fs.statSync(path.join(dir, file))
+        if (!stat.isFile()) continue
+        // Include in-progress bytes in the reported footprint even though they
+        // do not count as completed cached media.
         usedBytes += stat.size
-        count++
+        if (!file.endsWith('.part')) count++
       } catch {
         // ignore files that disappear mid-scan
       }

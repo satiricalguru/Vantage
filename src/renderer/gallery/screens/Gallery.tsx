@@ -12,8 +12,28 @@ const GenerativeThumbnailCanvas: React.FC<{ generatorId?: string }> = ({
   generatorId = 'aurora'
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isVisible, setIsVisible] = useState(false)
+  const [isPageVisible, setIsPageVisible] = useState(() => document.visibilityState !== 'hidden')
 
   useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { rootMargin: '200px' }
+    )
+    observer.observe(canvas)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const onVisibilityChange = () => setIsPageVisible(document.visibilityState !== 'hidden')
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [])
+
+  useEffect(() => {
+    if (!isVisible || !isPageVisible) return
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -21,6 +41,7 @@ const GenerativeThumbnailCanvas: React.FC<{ generatorId?: string }> = ({
 
     let animId: number
     let time = 0
+    let lastFrame = 0
 
     const width = (canvas.width = 360)
     const height = (canvas.height = 200)
@@ -33,7 +54,14 @@ const GenerativeThumbnailCanvas: React.FC<{ generatorId?: string }> = ({
       size: Math.random() * 2 + 1
     }))
 
-    const render = () => {
+    const render = (timestamp = 0) => {
+      // Tile previews are decorative; cap them at 15 FPS to avoid multiplying
+      // CPU/GPU work across the gallery grid.
+      if (timestamp - lastFrame < 1000 / 15) {
+        animId = requestAnimationFrame(render)
+        return
+      }
+      lastFrame = timestamp
       time += 0.025
       ctx.clearRect(0, 0, width, height)
 
@@ -106,7 +134,7 @@ const GenerativeThumbnailCanvas: React.FC<{ generatorId?: string }> = ({
 
     render()
     return () => cancelAnimationFrame(animId)
-  }, [generatorId])
+  }, [generatorId, isPageVisible, isVisible])
 
   return <canvas ref={canvasRef} className="w-full h-full object-cover" />
 }

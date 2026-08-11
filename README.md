@@ -193,7 +193,7 @@ Vantage offers 3 distinct performance tiers to balance visuals with energy effic
 ### Prerequisites
 
 - **Operating System**: macOS 12.0 (Monterey) or later (Apple Silicon M1/M2/M3/M4 & Intel x86_64)
-- **Node.js**: `v18.0.0` or higher
+- **Node.js**: `v20.19.0` or higher
 - **Package Manager**: `npm` v9+ or `yarn` / `pnpm`
 
 ### Installation
@@ -202,11 +202,7 @@ Vantage offers 3 distinct performance tiers to balance visuals with energy effic
    - 🍏 **Apple Silicon (M1/M2/M3/M4):** `Vantage-1.0.0-arm64.dmg`
    - 💻 **Intel (x86_64):** `Vantage-1.0.0-x64.dmg`
 2. Open the downloaded `.dmg` file and drag **Vantage** into your `Applications` folder.
-3. **If macOS shows `"Vantage is damaged and can't be opened"`**:
-   This occurs because macOS Gatekeeper quarantines open-source apps downloaded via web browsers. Run this single command in **Terminal**:
-   ```bash
-   xattr -cr /Applications/Vantage.app
-   ```
+3. If macOS reports that it cannot verify the app, **do not bypass Gatekeeper by removing quarantine**. Download a release that is Developer ID-signed and notarized, and verify its published checksum before installation.
 4. Launch Vantage from your Applications folder and enjoy live wallpapers!
 
 ---

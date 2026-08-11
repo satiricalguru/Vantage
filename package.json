@@ -6,7 +6,7 @@
   "author": "Vantage Team",
   "homepage": "https://github.com/satiricalguru/Vantage",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

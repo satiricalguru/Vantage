@@ -12,6 +12,8 @@ const SCREEN_SAVER_NAME = 'Vantage.saver'
 const SCREEN_SAVER_DATA_DIR_NAME = 'Vantage'
 const SCREEN_SAVER_SELECTION_NAME = 'screen-saver-video.txt'
 const MAX_THUMBNAIL_DOWNLOAD_BYTES = 32 * 1024 * 1024
+const THUMBNAIL_DOWNLOAD_TIMEOUT_MS = 20 * 1000
+const SCREEN_SAVER_COMMAND_TIMEOUT_MS = 30 * 1000
 const execFileAsync = promisify(execFile)
 
 function bundledScreenSaverPath(): string {
@@ -85,7 +87,10 @@ export async function setMacSystemWallpaper(imagePath: string): Promise<boolean>
   }
   const script = `tell application "System Events" to set picture of every desktop to (POSIX file "${safePath}")`
   try {
-    await execFileAsync('/usr/bin/osascript', ['-e', script])
+    await execFileAsync('/usr/bin/osascript', ['-e', script], {
+      timeout: SCREEN_SAVER_COMMAND_TIMEOUT_MS,
+      maxBuffer: 256 * 1024
+    })
     lastSystemWallpaperPath = imagePath
     console.log('[SystemWallpaper] Updated macOS system desktop wallpaper (Lock Screen background):', imagePath)
     return true
@@ -122,16 +127,25 @@ async function ensureLocalThumbnail(wallpaper: WallpaperItem): Promise<string | 
       return cachedThumbPath
     }
 
+    const temporaryThumbPath = `${cachedThumbPath}.part`
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), THUMBNAIL_DOWNLOAD_TIMEOUT_MS)
+    let writeStream: fs.WriteStream | null = null
     try {
-      const response = await net.fetch(wallpaper.previewUrl, { redirect: 'error' })
+      const response = await net.fetch(wallpaper.previewUrl, {
+        signal: controller.signal,
+        redirect: 'error'
+      })
       if (!response.ok || response.body == null) return null
       const total = Number(response.headers.get('content-length')) || 0
       if (total > MAX_THUMBNAIL_DOWNLOAD_BYTES) {
         console.warn('[SystemWallpaper] Remote thumbnail exceeds size limit:', wallpaper.previewUrl)
         return null
       }
+
+      await fs.promises.unlink(temporaryThumbPath).catch(() => undefined)
+      writeStream = fs.createWriteStream(temporaryThumbPath, { flags: 'wx' })
       const reader = response.body.getReader()
-      const chunks: Uint8Array[] = []
       let received = 0
       while (true) {
         const { done, value } = await reader.read()
@@ -139,16 +153,37 @@ async function ensureLocalThumbnail(wallpaper: WallpaperItem): Promise<string | 
         received += value.byteLength
         if (received > MAX_THUMBNAIL_DOWNLOAD_BYTES) {
           await reader.cancel()
-          return null
+          throw new Error('Remote thumbnail exceeds size limit')
         }
-        chunks.push(value)
+        if (!writeStream.write(value)) {
+          await new Promise<void>((resolve, reject) => {
+            const onDrain = () => {
+              writeStream?.off('error', onError)
+              resolve()
+            }
+            const onError = (err: Error) => {
+              writeStream?.off('drain', onDrain)
+              reject(err)
+            }
+            writeStream?.once('drain', onDrain)
+            writeStream?.once('error', onError)
+          })
+        }
       }
-      if (chunks.length === 0) return null
-      const buffer = Buffer.concat(chunks.map((c) => Buffer.from(c)))
-      await fs.promises.writeFile(cachedThumbPath, buffer)
+      if (received === 0) throw new Error('Remote thumbnail response is empty')
+      await new Promise<void>((resolve, reject) => {
+        writeStream?.once('error', reject)
+        writeStream?.end(() => resolve())
+      })
+      writeStream = null
+      await fs.promises.rename(temporaryThumbPath, cachedThumbPath)
       return cachedThumbPath
     } catch (err) {
       console.warn('[SystemWallpaper] Failed to download remote thumbnail:', err)
+      writeStream?.destroy()
+      await fs.promises.unlink(temporaryThumbPath).catch(() => undefined)
+    } finally {
+      clearTimeout(timeout)
     }
   }
 
@@ -172,10 +207,11 @@ export async function installVantageScreenSaver(): Promise<string> {
 
 /**
  * Synchronize current active wallpaper for both macOS System Desktop / Lock Screen
- * and the native Vantage Screen Saver module. Calls are serialized so a burst of
- * wallpaper changes cannot interleave (last invocation wins).
+ * and the native Vantage Screen Saver module. A burst is coalesced: at most one
+ * update is in flight and a final pass always reflects the latest selection.
  */
-let syncQueue: Promise<void> = Promise.resolve()
+let syncInProgress = false
+let syncRequested = false
 
 import { getMediaDimensions } from './mediaInfo'
 
@@ -206,7 +242,11 @@ export async function getHighResVideoFrame(videoPath: string): Promise<string | 
     }
 
     // Use native macOS qlmanage to extract a 2K/4K frame from the video
-    await execFileAsync('/usr/bin/qlmanage', ['-t', '-s', String(frameSize), '-o', cacheDir, videoPath])
+    await execFileAsync(
+      '/usr/bin/qlmanage',
+      ['-t', '-s', String(frameSize), '-o', cacheDir, videoPath],
+      { timeout: SCREEN_SAVER_COMMAND_TIMEOUT_MS, maxBuffer: 512 * 1024 }
+    )
 
     const generatedName = `${path.basename(videoPath)}.png`
     const generatedPath = path.join(cacheDir, generatedName)
@@ -223,9 +263,24 @@ export async function getHighResVideoFrame(videoPath: string): Promise<string | 
 }
 
 export function syncSelectedScreenSaverVideo(): void {
-  syncQueue = syncQueue.then(() => syncLockScreenAndSystemWallpaper()).catch((err) => {
-    console.warn('[ScreenSaver] Sync failed:', err)
-  })
+  syncRequested = true
+  if (syncInProgress) return
+
+  void (async () => {
+    syncInProgress = true
+    try {
+      do {
+        syncRequested = false
+        await syncLockScreenAndSystemWallpaper()
+      } while (syncRequested)
+    } catch (err) {
+      console.warn('[ScreenSaver] Sync failed:', err)
+    } finally {
+      syncInProgress = false
+      // A request arriving while the final iteration was settling still gets a pass.
+      if (syncRequested) syncSelectedScreenSaverVideo()
+    }
+  })()
 }
 
 async function syncLockScreenAndSystemWallpaper(): Promise<void> {
@@ -320,7 +375,7 @@ async function activateVantageScreenSaver(installedPath: string): Promise<void> 
     installedPath,
     'type',
     '0'
-  ])
+  ], { timeout: SCREEN_SAVER_COMMAND_TIMEOUT_MS, maxBuffer: 256 * 1024 })
   console.log('[ScreenSaver] Activated native module for the current macOS user.')
 }
 

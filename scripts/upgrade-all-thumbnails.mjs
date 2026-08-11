@@ -70,18 +70,10 @@ for (const file of files) {
     } catch { /* fallback to resample */ }
   }
 
-  // Check current file dimensions via sips
-  try {
-    const sipsOut = execFileSync('sips', ['-g', 'pixelWidth', filePath], { encoding: 'utf8' })
-    const match = sipsOut.match(/pixelWidth:\s*(\d+)/)
-    const currentW = match ? parseInt(match[1], 10) : 0
-
-    if (currentW < targetWidth) {
-      execFileSync('sips', ['--resampleWidth', String(targetWidth), filePath], { stdio: 'ignore' })
-      updatedCount++
-    }
-  } catch (err) {
-    console.warn(`[UpgradeThumbnails] Failed to resample ${file}:`, err)
+  // A missing source cannot be repaired by upscaling: interpolation adds no
+  // source detail and would make a misleading 2K/4K claim. Leave it untouched.
+  if (!cachedVideoPath && catalogItem?.resolution?.width >= 2560) {
+    console.warn(`[UpgradeThumbnails] Skipped ${file}: no verified local high-resolution source.`)
   }
 }
 

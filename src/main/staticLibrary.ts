@@ -129,7 +129,7 @@ export async function buildStaticManifest(): Promise<StaticManifest> {
   const presentIds: string[] = []
   const seen = new Set<string>()
 
-  const tasks: Array<{ filePath: string; id: string; base: string; rawBase: string; license: string; attribution: string }> = []
+  const tasks: Array<{ filePath: string; id: string; base: string; license: string; attribution: string }> = []
 
   for (const dir of getStaticSourceDirs()) {
     const { license, attribution } = licenseAndAttribution(dir)
@@ -142,7 +142,7 @@ export async function buildStaticManifest(): Promise<StaticManifest> {
       seen.add(id)
       presentIds.push(id)
       const formattedTitle = formatStaticTitle(base)
-      tasks.push({ filePath: entry.filePath, id, base: formattedTitle, rawBase: base, license, attribution })
+      tasks.push({ filePath: entry.filePath, id, base: formattedTitle, license, attribution })
     }
   }
 
@@ -153,15 +153,13 @@ export async function buildStaticManifest(): Promise<StaticManifest> {
     while (cursor < tasks.length) {
       const taskIdx = cursor++
       const task = tasks[taskIdx]
-      let dims = await getMediaDimensions(task.filePath)
-      
-      // Preserve canonical 4K/2K catalog resolution if available in catalog.json
-      const catalogMatch = INITIAL_WALLPAPERS.find(
-        (w) => w.id === task.rawBase || w.id === `motionbgs-${task.rawBase}` || w.id === `wallpaperx-${task.rawBase}`
-      )
-      if (catalogMatch && catalogMatch.resolution && catalogMatch.resolution.width > 0) {
-        dims = catalogMatch.resolution
-      }
+      const existing = getWallpaperById(task.id)
+      // Static tiles represent the image that will actually be shown, not the
+      // source video's advertised resolution. Never label a preview image as
+      // 2K/4K merely because a matching catalog video has that resolution.
+      const dims = existing?.sourceUrl === toMediaUrl(task.filePath)
+        ? existing.resolution
+        : await getMediaDimensions(task.filePath)
 
       items[taskIdx] = {
         id: task.id,
@@ -196,15 +194,36 @@ function licenseAndAttribution(dir: string): { license: string; attribution: str
   }
 }
 
-/** Add any new static wallpapers to the DB and prune removed ones */
+function staticWallpaperMatches(existing: WallpaperItem, item: WallpaperItem): boolean {
+  return (
+    existing.title === item.title &&
+    existing.category === item.category &&
+    existing.type === item.type &&
+    existing.source === item.source &&
+    existing.license === item.license &&
+    existing.attribution === item.attribution &&
+    existing.previewUrl === item.previewUrl &&
+    existing.sourceUrl === item.sourceUrl &&
+    existing.resolution.width === item.resolution.width &&
+    existing.resolution.height === item.resolution.height
+  )
+}
+
+/** Add new or changed static wallpapers to the DB and prune removed ones */
 export async function syncStaticWallpapers(): Promise<number> {
   const { items, presentIds } = await buildStaticManifest()
   let added = 0
   for (const item of items) {
-    if (!getWallpaperById(item.id)) added++
-    // Re-sync paths and metadata as well as registering new files. This also
-    // repairs records created before media URL escaping was introduced.
-    addWallpaperToDb(item)
+    const existing = getWallpaperById(item.id)
+    if (!existing) {
+      added++
+      addWallpaperToDb(item)
+    } else if (!staticWallpaperMatches(existing, item)) {
+      // Metadata and paths can legitimately change when the app or source
+      // folder is updated, but unchanged entries must not cause thousands of
+      // synchronous SQLite writes on every filesystem event.
+      addWallpaperToDb(item)
+    }
   }
   pruneStaticWallpapers(presentIds)
   return added

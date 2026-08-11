@@ -4,6 +4,8 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 
 const execFileAsync = promisify(execFile)
+const MEDIA_PROBE_TIMEOUT_MS = 15_000
+const MEDIA_PROBE_MAX_BUFFER_BYTES = 256 * 1024
 
 interface Dimensions {
   width: number
@@ -72,7 +74,11 @@ export async function getMediaDimensions(filePath: string): Promise<Dimensions> 
       // macOS sips fallback for WEBP, HEIC, TIFF, etc.
       if (process.platform === 'darwin') {
         try {
-          const { stdout } = await execFileAsync('sips', ['-g', 'pixelWidth', '-g', 'pixelHeight', filePath])
+          const { stdout } = await execFileAsync(
+            'sips',
+            ['-g', 'pixelWidth', '-g', 'pixelHeight', filePath],
+            { timeout: MEDIA_PROBE_TIMEOUT_MS, maxBuffer: MEDIA_PROBE_MAX_BUFFER_BYTES }
+          )
           const wMatch = stdout.match(/pixelWidth:\s*(\d+)/)
           const hMatch = stdout.match(/pixelHeight:\s*(\d+)/)
           if (wMatch && hMatch) {
@@ -86,13 +92,17 @@ export async function getMediaDimensions(filePath: string): Promise<Dimensions> 
     if (['.mp4', '.mov', '.webm', '.m4v', '.mkv'].includes(ext)) {
       // 2a. Try ffprobe first (works accurately for all cached/temp files)
       try {
-        const { stdout } = await execFileAsync('ffprobe', [
-          '-v', 'error',
-          '-select_streams', 'v:0',
-          '-show_entries', 'stream=width,height',
-          '-of', 'csv=s=x:p=0',
-          filePath
-        ])
+        const { stdout } = await execFileAsync(
+          'ffprobe',
+          [
+            '-v', 'error',
+            '-select_streams', 'v:0',
+            '-show_entries', 'stream=width,height',
+            '-of', 'csv=s=x:p=0',
+            filePath
+          ],
+          { timeout: MEDIA_PROBE_TIMEOUT_MS, maxBuffer: MEDIA_PROBE_MAX_BUFFER_BYTES }
+        )
         const match = stdout.trim().match(/^(\d+)x(\d+)$/)
         if (match) {
           const width = parseInt(match[1], 10)
@@ -106,7 +116,11 @@ export async function getMediaDimensions(filePath: string): Promise<Dimensions> 
       // 2b. macOS mdls fallback (works for indexed user files outside Caches)
       if (process.platform === 'darwin') {
         try {
-          const { stdout } = await execFileAsync('mdls', ['-name', 'kMDItemPixelWidth', '-name', 'kMDItemPixelHeight', filePath])
+          const { stdout } = await execFileAsync(
+            'mdls',
+            ['-name', 'kMDItemPixelWidth', '-name', 'kMDItemPixelHeight', filePath],
+            { timeout: MEDIA_PROBE_TIMEOUT_MS, maxBuffer: MEDIA_PROBE_MAX_BUFFER_BYTES }
+          )
           const wMatch = stdout.match(/kMDItemPixelWidth\s*=\s*(\d+)/)
           const hMatch = stdout.match(/kMDItemPixelHeight\s*=\s*(\d+)/)
           if (wMatch && hMatch && parseInt(wMatch[1], 10) > 0) {

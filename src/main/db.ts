@@ -103,9 +103,11 @@ export function initDatabase(): Database.Database {
       attribution = excluded.attribution,
       resolution_w = excluded.resolution_w,
       resolution_h = excluded.resolution_h,
+      duration = excluded.duration,
       previewUrl = excluded.previewUrl,
       sourceUrl = excluded.sourceUrl,
       generatorId = excluded.generatorId,
+      colorPalette = excluded.colorPalette,
       added_at = excluded.added_at
   `)
 

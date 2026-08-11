@@ -3,43 +3,56 @@ import { setGlobalPlaybackState, setPerformanceModeForDisplay, getGlobalPlayback
 import { getDisplayAssignment, setPerformanceMode } from './db'
 import { refreshTrayMenu } from './tray'
 
-let playbackBeforeLock: boolean | null = null
-let playbackBeforeSuspend: boolean | null = null
+type SystemPauseReason = 'lock' | 'suspend'
+
+// Lock and suspend events can overlap. Snapshot playback only when the first
+// system-owned pause starts, then restore it only after the final reason clears.
+const systemPauseReasons = new Set<SystemPauseReason>()
+let playbackBeforeSystemPause: boolean | null = null
 // User-selected per-display modes preserved while the battery override is active
 const savedModesBeforeBattery = new Map<number, string>()
+
+function addSystemPause(reason: SystemPauseReason): void {
+  if (systemPauseReasons.has(reason)) return
+  if (systemPauseReasons.size === 0) {
+    playbackBeforeSystemPause = getGlobalPlaybackState()
+  }
+  systemPauseReasons.add(reason)
+  setGlobalPlaybackState(false)
+}
+
+function removeSystemPause(reason: SystemPauseReason): void {
+  if (!systemPauseReasons.delete(reason) || systemPauseReasons.size > 0) return
+  if (playbackBeforeSystemPause !== null) {
+    setGlobalPlaybackState(playbackBeforeSystemPause)
+    playbackBeforeSystemPause = null
+  }
+}
 
 export function initPowerManager(): void {
   powerMonitor.on('lock-screen', () => {
     console.log('[PowerManager] Screen locked. macOS owns the authenticated Lock Screen; pausing desktop wallpapers.')
     // An Electron wallpaper window cannot render through macOS's authenticated Lock Screen.
-    // Pause while hidden and restore the user's exact state after unlock.
-    playbackBeforeLock = getGlobalPlaybackState()
-    setGlobalPlaybackState(false)
+    addSystemPause('lock')
     refreshTrayMenu()
   })
 
   powerMonitor.on('unlock-screen', () => {
-    console.log('[PowerManager] Screen unlocked. Restoring desktop wallpaper playback state.')
-    // Restore the exact state the user had before locking; never force-play over a pause
-    if (playbackBeforeLock !== null) {
-      setGlobalPlaybackState(playbackBeforeLock)
-      playbackBeforeLock = null
-    }
+    console.log('[PowerManager] Screen unlocked. Restoring desktop wallpaper playback state when system pauses have ended.')
+    removeSystemPause('lock')
     refreshTrayMenu()
   })
 
   powerMonitor.on('suspend', () => {
     console.log('[PowerManager] System suspending. Pausing wallpapers.')
-    playbackBeforeSuspend = getGlobalPlaybackState()
-    setGlobalPlaybackState(false)
+    addSystemPause('suspend')
+    refreshTrayMenu()
   })
 
   powerMonitor.on('resume', () => {
-    console.log('[PowerManager] System resumed. Restoring wallpaper playback state.')
-    if (playbackBeforeSuspend !== null) {
-      setGlobalPlaybackState(playbackBeforeSuspend)
-      playbackBeforeSuspend = null
-    }
+    console.log('[PowerManager] System resumed. Restoring wallpaper playback state when system pauses have ended.')
+    removeSystemPause('suspend')
+    refreshTrayMenu()
   })
 
   powerMonitor.on('on-battery', () => {

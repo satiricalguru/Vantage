@@ -1,10 +1,11 @@
 import { app, BrowserWindow, ipcMain, dialog, screen, shell, protocol } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
+import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { Readable } from 'node:stream'
 import { initDatabase, getAllWallpapers, getWallpaperById, setDisplayAssignment, getDisplayAssignment, setPerformanceMode, toggleFavoriteInDb, deleteWallpaperFromDb, addWallpaperToDb, pruneUserFolderEntries, closeDatabase, getWallpaperFileReferences } from './db'
-import { syncWallpaperWindows, applyWallpaperToDisplay, setPerformanceModeForDisplay, setupDisplayListeners, getGlobalPlaybackState, setGalleryWindowGetter, broadcastCacheProgress } from './wallpaperWindow'
+import { syncWallpaperWindows, applyWallpaperToDisplay, setPerformanceModeForDisplay, setupDisplayListeners, getGlobalPlaybackState, setGalleryWindowGetter, broadcastCacheProgress, isWallpaperRenderer } from './wallpaperWindow'
 import { createTray } from './tray'
 import { initPowerManager } from './powerManager'
 import { ensureCached, getCacheStatus, clearCache, evictToLimit, setCacheLimitBytes, getCacheDir, isAllowedRemoteMediaUrl, onCacheProgress, getCacheLimitBytes, CACHE_FLOOR_BYTES, CACHE_CEILING_BYTES } from './videoCache'
@@ -72,8 +73,7 @@ function watchVantageWallpapersFolder(): void {
       if (!filename) return
       if (scanTimer) clearTimeout(scanTimer)
       scanTimer = setTimeout(() => {
-        enqueueScan()
-        notifyCatalogChanged()
+        void enqueueScan().then(() => notifyCatalogChanged())
       }, 500)
     })
     console.log('[FolderScanner] Watching:', targetDir)
@@ -94,8 +94,7 @@ function watchStaticLibrary(): void {
         if (!filename) return
         if (staticTimer) clearTimeout(staticTimer)
         staticTimer = setTimeout(() => {
-          enqueueStaticSync()
-          notifyCatalogChanged()
+          void enqueueStaticSync().then(() => notifyCatalogChanged())
         }, 3000)
       })
       staticWatchers.push(watcher)
@@ -110,15 +109,8 @@ async function scanVantageWallpapersFolder(): Promise<number> {
   const targetDir = getVantageWallpapersFolder()
   let addedCount = 0
   const presentIds: string[] = []
-  // Sanitized IDs can collide (e.g. "a b.png" vs "a_b.png"); disambiguate
-  // deterministically within a scan pass so no DB row is silently overwritten.
-  const seenUserFolderIds = new Map<string, number>()
-  const uniqueUserFolderId = (file: string): string => {
-    const base = `user-folder-${file.replace(/[^a-zA-Z0-9_-]/g, '_')}`
-    const count = seenUserFolderIds.get(base) ?? 0
-    seenUserFolderIds.set(base, count + 1)
-    return count === 0 ? base : `${base}-${count + 1}`
-  }
+  // Stable IDs preserve selections across scans while a short digest prevents
+  // distinct names that sanitize identically from overwriting the same row.
   try {
     const files = await fs.promises.readdir(targetDir)
     interface ScanTask {
@@ -147,7 +139,7 @@ async function scanVantageWallpapersFolder(): Promise<number> {
         }
         if (!stat.isFile()) continue
         const isVideo = ['.mp4', '.mov', '.webm'].includes(ext)
-        const id = uniqueUserFolderId(file)
+        const id = userFolderId(file, filePath)
         presentIds.push(id)
         tasks.push({ file, id, filePath, isVideo })
       }
@@ -255,20 +247,23 @@ function forwardRendererLogs(win: BrowserWindow): void {
 const VALID_PERFORMANCE_MODES = new Set(['quality', 'balanced', 'battery-saver'])
 const VALID_IMPORT_EXTENSIONS = new Set(['.mp4', '.mov', '.webm', '.png', '.jpg', '.jpeg', '.webp'])
 
+function userFolderId(fileName: string, filePath: string): string {
+  const legacyId = `user-folder-${fileName.replace(/[^a-zA-Z0-9_-]/g, '_')}`
+  const mediaUrl = toMediaUrl(filePath)
+  const suffix = crypto.createHash('sha256').update(fileName).digest('hex').slice(0, 12)
+  const disambiguatedId = `${legacyId}-${suffix}`
+
+  // Preserve existing legacy IDs whenever they already identify this file, but
+  // never let two distinct filenames that sanitize alike overwrite each other.
+  const disambiguated = getWallpaperById(disambiguatedId)
+  if (disambiguated?.sourceUrl === mediaUrl) return disambiguatedId
+  const legacy = getWallpaperById(legacyId)
+  return !legacy || legacy.sourceUrl === mediaUrl ? legacyId : disambiguatedId
+}
+
 function isTrustedIpcSender(event: Electron.IpcMainInvokeEvent): boolean {
   const win = BrowserWindow.fromWebContents(event.sender)
-  if (!win || win.isDestroyed()) return false
-
-  const url = event.sender.getURL()
-  if (url.startsWith('file://')) return true
-
-  const rendererUrl = process.env['ELECTRON_RENDERER_URL']
-  if (!rendererUrl) return false
-  try {
-    return new URL(url).origin === new URL(rendererUrl).origin
-  } catch {
-    return false
-  }
+  return Boolean(win && !win.isDestroyed() && (win === galleryWindow || isWallpaperRenderer(event.sender)))
 }
 
 function requireTrustedIpcSender(event: Electron.IpcMainInvokeEvent): void {
@@ -639,8 +634,7 @@ function registerIpcHandlers(): void {
       }
     }
 
-    const id = `user-folder-${finalName.replace(/[^a-zA-Z0-9_-]/g, '_')}`
-    const existing = getWallpaperById(id)
+    const id = userFolderId(finalName, targetPath)
     const newItem = {
       id,
       title: finalName.replace(/\.[^/.]+$/, ''),
@@ -656,7 +650,7 @@ function registerIpcHandlers(): void {
 
     addWallpaperToDb(newItem)
     notifyCatalogChanged()
-    return existing || newItem
+    return newItem
   })
 
   ipcMain.handle('cache:clear', (event) => {

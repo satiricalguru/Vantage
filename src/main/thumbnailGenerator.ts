@@ -6,6 +6,8 @@ import crypto from 'node:crypto'
 import { promisify } from 'node:util'
 
 const execFileAsync = promisify(execFile)
+const THUMBNAIL_GENERATION_TIMEOUT_MS = 60 * 1000
+const THUMBNAIL_GENERATION_MAX_BUFFER_BYTES = 512 * 1024
 
 function getThumbnailDir(): string {
   const thumbDir = path.join(app.getPath('userData'), 'thumbnails')
@@ -60,7 +62,11 @@ export async function generateVideoThumbnail(videoPath: string): Promise<string 
   // Strategy 1: macOS QuickLook thumbnail generator (qlmanage)
   if (process.platform === 'darwin') {
     try {
-      await execFileAsync('/usr/bin/qlmanage', ['-t', '-s', String(targetSize), '-o', thumbDir, videoPath])
+      await execFileAsync(
+        '/usr/bin/qlmanage',
+        ['-t', '-s', String(targetSize), '-o', thumbDir, videoPath],
+        { timeout: THUMBNAIL_GENERATION_TIMEOUT_MS, maxBuffer: THUMBNAIL_GENERATION_MAX_BUFFER_BYTES }
+      )
       // qlmanage writes <basename>.png; normalize to the derived stable name
       const qlOutput = path.join(thumbDir, `${path.basename(videoPath)}.png`)
       if (fs.existsSync(qlOutput)) {
@@ -90,14 +96,18 @@ export async function generateVideoThumbnail(videoPath: string): Promise<string 
   // Strategy 2: ffmpeg fallback if available
   try {
     const jpgTarget = path.join(thumbDir, `${stem}.jpg`)
-    await execFileAsync('ffmpeg', [
-      '-y',
-      '-ss', '00:00:01',
-      '-i', videoPath,
-      '-vframes', '1',
-      '-q:v', '2',
-      jpgTarget
-    ])
+    await execFileAsync(
+      'ffmpeg',
+      [
+        '-y',
+        '-ss', '00:00:01',
+        '-i', videoPath,
+        '-vframes', '1',
+        '-q:v', '2',
+        jpgTarget
+      ],
+      { timeout: THUMBNAIL_GENERATION_TIMEOUT_MS, maxBuffer: THUMBNAIL_GENERATION_MAX_BUFFER_BYTES }
+    )
     if (fs.existsSync(jpgTarget) && fs.statSync(jpgTarget).size > 0) {
       console.log(`[ThumbnailGenerator] Generated ${targetSize}px thumbnail via ffmpeg:`, jpgTarget)
       return jpgTarget
@@ -141,15 +151,17 @@ export function pruneOrphanThumbnails(referencedBasenames: string[]): number {
   }
 
   for (const entry of entries) {
-    if (referenced.has(entry)) continue
-    // Never touch files that may still be mid-generation
-    let mtimeMs: number
+    // This directory can contain support artifacts; only generated thumbnail
+    // files are owned by this cleanup routine.
+    if (!/^.+-[a-f0-9]{16}\.(?:png|jpg)$/i.test(entry) || referenced.has(entry)) continue
+    // Never touch files that may still be mid-generation or non-regular files.
+    let stat: fs.Stats
     try {
-      mtimeMs = fs.statSync(path.join(thumbDir, entry)).mtimeMs
+      stat = fs.statSync(path.join(thumbDir, entry))
     } catch {
       continue
     }
-    if (now - mtimeMs < FRESH_WINDOW_MS) continue
+    if (!stat.isFile() || now - stat.mtimeMs < FRESH_WINDOW_MS) continue
     try {
       fs.unlinkSync(path.join(thumbDir, entry))
       removed++

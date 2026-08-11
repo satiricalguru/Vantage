@@ -24,20 +24,21 @@ if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true })
 }
 
-let targetSize = '3840'
+let targetSize = '1920'
 if (process.platform === 'darwin') {
   try {
-    const mdlsOut = execFileSync('mdls', ['-name', 'kMDItemPixelWidth', inputPath], { encoding: 'utf8' })
-    const match = mdlsOut.match(/kMDItemPixelWidth\s*=\s*(\d+)/)
-    if (match) {
-      const w = parseInt(match[1], 10)
-      if (w >= 3840) targetSize = '3840'
-      else if (w >= 2560) targetSize = '2560'
-      else if (w >= 1920) targetSize = '1920'
-      else if (w > 0) targetSize = String(Math.max(w, 1280))
-    }
+    const probe = execFileSync(
+      'ffprobe',
+      ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width', '-of', 'csv=p=0', inputPath],
+      { encoding: 'utf8' }
+    ).trim()
+    const w = parseInt(probe, 10)
+    if (w >= 3840) targetSize = '3840'
+    else if (w >= 2560) targetSize = '2560'
+    else if (w >= 1920) targetSize = '1920'
+    else if (w > 0) targetSize = String(Math.max(w, 1280))
   } catch {
-    /* fallback to default targetSize */
+    // Keep a conservative output size when the source cannot be probed.
   }
 
   try {

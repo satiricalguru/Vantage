@@ -1,4 +1,4 @@
-import { BrowserWindow, screen, Display } from 'electron'
+import { BrowserWindow, screen, Display, WebContents } from 'electron'
 import path from 'node:path'
 import { getDisplayAssignment, getWallpaperById, setPerformanceMode } from './db'
 import { hardenWindowNavigation } from './windowSecurity'
@@ -196,6 +196,13 @@ export function broadcastCacheProgress(progress: {
     if (win.isDestroyed()) continue
     win.webContents.send('cache:progress', progress)
   }
+}
+
+export function isWallpaperRenderer(contents: WebContents): boolean {
+  for (const win of wallpaperWindows.values()) {
+    if (!win.isDestroyed() && win.webContents.id === contents.id) return true
+  }
+  return false
 }
 
 export function setupDisplayListeners(): void {
