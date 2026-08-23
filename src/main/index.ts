@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, screen, shell, protocol } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, screen, shell, protocol, nativeImage } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import crypto from 'node:crypto'
