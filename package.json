@@ -1,6 +1,6 @@
 {
   "name": "vantage",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A free, native live wallpaper app for macOS",
   "main": "./out/main/index.js",
   "author": "Vantage Team",
@@ -54,10 +54,19 @@
     "mac": {
       "icon": "build/icon.icns",
       "category": "public.app-category.utilities",
-      "identity": null,
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
       "target": [
         {
           "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
           "arch": [
             "arm64",
             "x64"
