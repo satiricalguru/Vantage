@@ -90,6 +90,10 @@
         "to": "resources/catalog.json"
       },
       {
+        "from": "resources/icons",
+        "to": "resources/icons"
+      },
+      {
         "from": "resources/thumbnails",
         "to": "resources/thumbnails"
       },

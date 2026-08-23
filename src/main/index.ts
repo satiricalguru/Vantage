@@ -298,17 +298,30 @@ if (!gotTheLock) {
 }
 
 function getAppIconPath(): string | undefined {
-  const iconPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'icons', 'icon.png')
-    : path.join(app.getAppPath(), 'resources', 'icons', 'icon.png')
-  return fs.existsSync(iconPath) ? iconPath : undefined
+  const candidates = [
+    path.join(process.resourcesPath, 'resources', 'icons', 'icon.png'),
+    path.join(process.resourcesPath, 'icons', 'icon.png'),
+    path.join(app.getAppPath(), 'resources', 'icons', 'icon.png'),
+    path.join(app.getAppPath(), 'build', 'icon.png'),
+    path.join(__dirname, '../../resources/icons/icon.png'),
+    path.join(__dirname, '../../build/icon.png')
+  ]
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p
+  }
+  return undefined
 }
 
 function setupDockIcon(): void {
-  const iconPath = getAppIconPath()
-  if (iconPath && process.platform === 'darwin' && app.dock) {
+  if (process.platform === 'darwin' && app.dock) {
     try {
-      app.dock.setIcon(iconPath)
+      const iconPath = getAppIconPath()
+      if (iconPath) {
+        const image = nativeImage.createFromPath(iconPath)
+        if (!image.isEmpty()) {
+          app.dock.setIcon(image)
+        }
+      }
     } catch (err) {
       console.warn('[AppIcon] Could not set dock icon:', err)
     }
@@ -320,17 +333,20 @@ function createGalleryWindow(): BrowserWindow {
     if (galleryWindow.isMinimized()) galleryWindow.restore()
     galleryWindow.show()
     galleryWindow.focus()
+    setupDockIcon()
     return galleryWindow
   }
 
+  setupDockIcon()
   const iconPath = getAppIconPath()
+  const iconImage = iconPath ? nativeImage.createFromPath(iconPath) : undefined
   galleryWindow = new BrowserWindow({
     width: 1040,
     height: 720,
     minWidth: 840,
     minHeight: 580,
     title: 'Vantage',
-    icon: iconPath,
+    icon: iconImage && !iconImage.isEmpty() ? iconImage : iconPath,
     show: false,
     frame: false,
     titleBarStyle: 'hiddenInset',

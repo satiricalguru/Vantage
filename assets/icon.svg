@@ -1,78 +1,92 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <!-- Outer Glow & Shadow -->
-    <filter id="appShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.6"/>
-      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#4FACFE" flood-opacity="0.3"/>
-    </filter>
-
-    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="12" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
-
-    <!-- Background Gradient -->
+    <!-- Background Cosmic Gradient -->
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0F111A"/>
-      <stop offset="50%" stop-color="#161B2E"/>
-      <stop offset="100%" stop-color="#0A0C14"/>
+      <stop offset="0%" stop-color="#0E111D"/>
+      <stop offset="45%" stop-color="#141829"/>
+      <stop offset="100%" stop-color="#08090F"/>
     </linearGradient>
 
-    <!-- Border Metallic Gradient -->
+    <!-- Metallic Border Gradient -->
     <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00F2FE" stop-opacity="0.8"/>
-      <stop offset="50%" stop-color="#9B51E0" stop-opacity="0.4"/>
-      <stop offset="100%" stop-color="#00C6FF" stop-opacity="0.8"/>
+      <stop offset="0%" stop-color="#00F2FE" stop-opacity="0.85"/>
+      <stop offset="50%" stop-color="#9B51E0" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#00C6FF" stop-opacity="0.85"/>
     </linearGradient>
 
     <!-- Mountain Spectrum Gradients -->
     <linearGradient id="mountainBack" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#7F00FF"/>
-      <stop offset="100%" stop-color="#E100FF"/>
+      <stop offset="0%" stop-color="#6A00F4"/>
+      <stop offset="100%" stop-color="#D800E6"/>
     </linearGradient>
 
     <linearGradient id="mountainMid" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#00C6FF"/>
-      <stop offset="100%" stop-color="#0072FF"/>
+      <stop offset="100%" stop-color="#0062FF"/>
     </linearGradient>
 
     <linearGradient id="mountainFront" x1="0%" y1="100%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#00F2FE"/>
-      <stop offset="100%" stop-color="#4FACFE"/>
+      <stop offset="100%" stop-color="#3A88FE"/>
     </linearGradient>
 
-    <!-- Sun / Aperture Glow Gradient -->
+    <!-- Sun / Horizon Flare Gradient -->
     <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#FFD200"/>
-      <stop offset="60%" stop-color="#F7971E"/>
-      <stop offset="100%" stop-color="#FF512F" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#FFF3A8"/>
+      <stop offset="35%" stop-color="#FFA800"/>
+      <stop offset="70%" stop-color="#FF4B2B" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#FF416C" stop-opacity="0"/>
     </radialGradient>
+
+    <!-- Clip Path for Perfect Squircle Masking -->
+    <clipPath id="squircleClip">
+      <rect x="0" y="0" width="512" height="512" rx="115" ry="115"/>
+    </clipPath>
+
+    <!-- Inner Shadow / Inset Lighting -->
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
   </defs>
 
-  <!-- macOS Style Squircle Container -->
-  <g filter="url(#appShadow)">
-    <rect x="32" y="32" width="448" height="448" rx="100" fill="url(#bgGrad)" stroke="url(#borderGrad)" stroke-width="4"/>
+  <!-- Main Squircle Group Clipped Cleanly -->
+  <g clip-path="url(#squircleClip)">
+    <!-- Base Background -->
+    <rect x="0" y="0" width="512" height="512" fill="url(#bgGrad)"/>
+
+    <!-- Ambient Cosmic Stars/Dust -->
+    <circle cx="90" cy="90" r="1.5" fill="#FFFFFF" opacity="0.6"/>
+    <circle cx="150" cy="130" r="1" fill="#00F2FE" opacity="0.5"/>
+    <circle cx="380" cy="80" r="2" fill="#FFFFFF" opacity="0.7"/>
+    <circle cx="430" cy="140" r="1.5" fill="#9B51E0" opacity="0.6"/>
+    <circle cx="290" cy="60" r="1.5" fill="#00C6FF" opacity="0.4"/>
+
+    <!-- Subtle Top Ambient Glass Highlight -->
+    <path d="M 0 0 L 512 0 L 512 160 Q 256 90 0 160 Z" fill="#FFFFFF" fill-opacity="0.05"/>
+
+    <!-- Glowing Sun / Camera Aperture Core -->
+    <circle cx="256" cy="190" r="95" fill="url(#sunGlow)"/>
+
+    <!-- Geometric Aperture Hexagon Over Sun -->
+    <g stroke="#00F2FE" stroke-width="3.5" fill="none" filter="url(#neonGlow)" opacity="0.95">
+      <polygon points="256,132 306,161 306,219 256,248 206,219 206,161"/>
+      <circle cx="256" cy="190" r="22" fill="#FFFFFF" stroke="#FFA800" stroke-width="2.5"/>
+    </g>
+
+    <!-- Mountain Layer 1: Back Peak (Cosmic Violet / Magenta) -->
+    <path d="M 0 460 L 0 380 L 130 240 L 220 330 L 330 200 L 460 360 L 512 310 L 512 512 L 0 512 Z" fill="url(#mountainBack)" opacity="0.75"/>
+
+    <!-- Mountain Layer 2: Mid Peak (Sapphire / Royal Blue) -->
+    <path d="M 0 470 L 0 390 L 100 270 L 220 390 L 370 230 L 512 380 L 512 512 L 0 512 Z" fill="url(#mountainMid)" opacity="0.9"/>
+
+    <!-- Mountain Layer 3: Front Wave & Peak (Electric Cyan / Aqua Apex) -->
+    <path d="M 0 430 Q 120 310 240 360 T 512 390 L 512 512 L 0 512 Z" fill="url(#mountainFront)"/>
+
+    <!-- Dynamic Foreground Accent Crest -->
+    <path d="M 0 480 Q 140 370 280 430 T 512 450 L 512 512 L 0 512 Z" fill="#00F2FE" opacity="0.35"/>
   </g>
 
-  <!-- Ambient Light Reflection -->
-  <path d="M 132 36 Q 256 70 380 36 C 420 36 448 64 448 104 L 448 180 Q 256 120 64 180 L 64 104 C 64 64 92 36 132 36 Z" fill="#FFFFFF" fill-opacity="0.04"/>
-
-  <!-- Glowing Cosmic Sun / Lens Aperture -->
-  <circle cx="256" cy="200" r="75" fill="url(#sunGlow)" filter="url(#neonGlow)"/>
-
-  <!-- Dynamic Wave & Mountain Layer 1 (Back Peak) -->
-  <path d="M 80 380 L 190 230 L 270 320 L 360 210 L 432 380 Z" fill="url(#mountainBack)" opacity="0.6"/>
-
-  <!-- Dynamic Wave & Mountain Layer 2 (Mid Peak) -->
-  <path d="M 64 400 L 160 270 L 256 370 L 380 230 L 448 400 Z" fill="url(#mountainMid)" opacity="0.8"/>
-
-  <!-- Vibrant Wave & Mountain Layer 3 (Front Apex) -->
-  <path d="M 64 420 Q 160 310 256 350 T 448 420 L 448 440 C 448 460 430 480 410 480 L 102 480 C 80 480 64 460 64 440 Z" fill="url(#mountainFront)"/>
-
-  <!-- Aperture Iris Geometric Accent Overlays -->
-  <g stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.85" filter="url(#neonGlow)">
-    <!-- Sleek Aperture Angles -->
-    <polygon points="256,150 300,175 300,225 256,250 212,225 212,175" fill="none" stroke="#00F2FE" stroke-width="2.5"/>
-    <circle cx="256" cy="200" r="18" fill="#FFFFFF" fill-opacity="0.9"/>
-  </g>
+  <!-- Crisp Metallic Squircle Outer Border -->
+  <rect x="1" y="1" width="510" height="510" rx="114" ry="114" fill="none" stroke="url(#borderGrad)" stroke-width="2.5"/>
 </svg>
