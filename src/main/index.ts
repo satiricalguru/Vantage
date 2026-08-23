@@ -313,7 +313,10 @@ function getAppIconPath(): string | undefined {
 }
 
 function setupDockIcon(): void {
-  if (process.platform === 'darwin' && app.dock) {
+  // In dev mode (running via electron / npm run dev), BrowserWindow's icon is ignored on macOS.
+  // Set it dynamically at runtime. Once packaged, the bundle's Info.plist (CFBundleIconFile)
+  // and Contents/Resources/icon.icns natively control the Dock, Finder, and App Switcher.
+  if (process.platform === 'darwin' && !app.isPackaged && app.dock) {
     try {
       const iconPath = getAppIconPath()
       if (iconPath) {
@@ -323,7 +326,7 @@ function setupDockIcon(): void {
         }
       }
     } catch (err) {
-      console.warn('[AppIcon] Could not set dock icon:', err)
+      console.warn('[AppIcon] Could not set dev dock icon:', err)
     }
   }
 }

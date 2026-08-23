@@ -19,8 +19,9 @@ if (!fs.existsSync(svgIcon)) {
 if (!fs.existsSync(buildDir)) fs.mkdirSync(buildDir, { recursive: true })
 if (!fs.existsSync(resourcesIconsDir)) fs.mkdirSync(resourcesIconsDir, { recursive: true })
 
-const tmpPng = path.join(buildDir, 'tmp_native_transparent_icon.png')
+const tmpPng = path.join(buildDir, 'tmp_1024_master.png')
 
+// Render SVG into 1024x1024 master PNG using native macOS AppKit
 const swiftScript = `
 import AppKit
 
@@ -64,7 +65,6 @@ try {
 } catch (err) {
   const stderr = err.stderr?.toString?.() || ''
   console.error(`[BuildIcon] Native Swift SVG rendering FAILED: ${stderr}`)
-  console.error('[BuildIcon] Aborting — the app would otherwise ship with the default Electron icon.')
   process.exit(1)
 } finally {
   if (fs.existsSync(tempSwiftFile)) fs.rmSync(tempSwiftFile, { force: true })
@@ -75,34 +75,30 @@ if (!fs.existsSync(tmpPng) || fs.statSync(tmpPng).size <= 0) {
   process.exit(1)
 }
 
-{
-  fs.copyFileSync(tmpPng, pngTarget)
-  fs.copyFileSync(tmpPng, resourcesPngTarget)
+// 1. Copy 1024x1024 master PNG to build and resources
+fs.copyFileSync(tmpPng, pngTarget)
+fs.copyFileSync(tmpPng, resourcesPngTarget)
 
-  if (!fs.existsSync(iconsetDir)) fs.mkdirSync(iconsetDir, { recursive: true })
-  const sizes = [16, 32, 128, 256, 512, 1024]
-  for (const size of sizes) {
-    if (size === 1024) {
-      execFileSync('sips', ['-z', String(size), String(size), tmpPng, '--out', path.join(iconsetDir, 'icon_512x512@2x.png')], { stdio: 'pipe' })
-    } else if (size === 16) {
-      execFileSync('sips', ['-z', String(size), String(size), tmpPng, '--out', path.join(iconsetDir, 'icon_16x16.png')], { stdio: 'pipe' })
-      execFileSync('sips', ['-z', '32', '32', tmpPng, '--out', path.join(iconsetDir, 'icon_16x16@2x.png')], { stdio: 'pipe' })
-    } else if (size === 32) {
-      execFileSync('sips', ['-z', '32', '32', tmpPng, '--out', path.join(iconsetDir, 'icon_32x32.png')], { stdio: 'pipe' })
-      execFileSync('sips', ['-z', '64', '64', tmpPng, '--out', path.join(iconsetDir, 'icon_32x32@2x.png')], { stdio: 'pipe' })
-    } else if (size === 128) {
-      execFileSync('sips', ['-z', '128', '128', tmpPng, '--out', path.join(iconsetDir, 'icon_128x128.png')], { stdio: 'pipe' })
-      execFileSync('sips', ['-z', '256', '256', tmpPng, '--out', path.join(iconsetDir, 'icon_128x128@2x.png')], { stdio: 'pipe' })
-    } else if (size === 256) {
-      execFileSync('sips', ['-z', '256', '256', tmpPng, '--out', path.join(iconsetDir, 'icon_256x256.png')], { stdio: 'pipe' })
-      execFileSync('sips', ['-z', '512', '512', tmpPng, '--out', path.join(iconsetDir, 'icon_256x256@2x.png')], { stdio: 'pipe' })
-    } else if (size === 512) {
-      execFileSync('sips', ['-z', '512', '512', tmpPng, '--out', path.join(iconsetDir, 'icon_512x512.png')], { stdio: 'pipe' })
-    }
-  }
+// 2. Build Apple standard .iconset directory
+if (fs.existsSync(iconsetDir)) fs.rmSync(iconsetDir, { recursive: true, force: true })
+fs.mkdirSync(iconsetDir, { recursive: true })
 
-  execFileSync('iconutil', ['-c', 'icns', iconsetDir, '-o', icnsTarget], { stdio: 'pipe' })
-  fs.rmSync(iconsetDir, { recursive: true, force: true })
-  fs.rmSync(tmpPng, { force: true })
-  console.log('[BuildIcon] Successfully generated crisp transparent PNG & ICNS app icons!')
-}
+execFileSync('sips', ['-z', '16', '16', tmpPng, '--out', path.join(iconsetDir, 'icon_16x16.png')], { stdio: 'pipe' })
+execFileSync('sips', ['-z', '32', '32', tmpPng, '--out', path.join(iconsetDir, 'icon_16x16@2x.png')], { stdio: 'pipe' })
+execFileSync('sips', ['-z', '32', '32', tmpPng, '--out', path.join(iconsetDir, 'icon_32x32.png')], { stdio: 'pipe' })
+execFileSync('sips', ['-z', '64', '64', tmpPng, '--out', path.join(iconsetDir, 'icon_32x32@2x.png')], { stdio: 'pipe' })
+execFileSync('sips', ['-z', '128', '128', tmpPng, '--out', path.join(iconsetDir, 'icon_128x128.png')], { stdio: 'pipe' })
+execFileSync('sips', ['-z', '256', '256', tmpPng, '--out', path.join(iconsetDir, 'icon_128x128@2x.png')], { stdio: 'pipe' })
+execFileSync('sips', ['-z', '256', '256', tmpPng, '--out', path.join(iconsetDir, 'icon_256x256.png')], { stdio: 'pipe' })
+execFileSync('sips', ['-z', '512', '512', tmpPng, '--out', path.join(iconsetDir, 'icon_256x256@2x.png')], { stdio: 'pipe' })
+execFileSync('sips', ['-z', '512', '512', tmpPng, '--out', path.join(iconsetDir, 'icon_512x512.png')], { stdio: 'pipe' })
+fs.copyFileSync(tmpPng, path.join(iconsetDir, 'icon_512x512@2x.png')) // full 1024x1024
+
+// 3. Compile .icns with iconutil
+execFileSync('iconutil', ['-c', 'icns', iconsetDir, '-o', icnsTarget], { stdio: 'pipe' })
+
+// Clean up temp files
+fs.rmSync(iconsetDir, { recursive: true, force: true })
+fs.rmSync(tmpPng, { force: true })
+
+console.log('[BuildIcon] Successfully generated crisp transparent PNG & ICNS app icons!')
