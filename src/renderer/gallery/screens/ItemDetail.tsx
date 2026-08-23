@@ -12,6 +12,7 @@ export const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
   const { activeCategory, displays, applyWallpaper, applyToAllDisplays, toggleFavorite, deleteWallpaper } = useGalleryStore()
   const isImportedCategory = activeCategory === 'imported'
   const isAllAssigned = displays.length > 0 && displays.every((d) => d.assignedWallpaperId === item.id)
+  const [isVideoBuffering, setIsVideoBuffering] = React.useState(item.type === 'video')
 
   // M-9 FIX: Close modal on Escape key
   useEffect(() => {
@@ -33,15 +34,31 @@ export const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
         {/* Preview media pane */}
         <div className="w-full md:w-1/2 bg-black relative flex items-center justify-center min-h-[300px]">
           {item.type === 'video' ? (
-            <video
-              src={item.sourceUrl}
-              poster={item.previewUrl}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            />
+            <>
+              <video
+                src={item.sourceUrl}
+                poster={item.previewUrl}
+                autoPlay
+                loop
+                muted
+                playsInline
+                onWaiting={() => setIsVideoBuffering(true)}
+                onPlaying={() => setIsVideoBuffering(false)}
+                onCanPlay={() => setIsVideoBuffering(false)}
+                onLoadedData={() => setIsVideoBuffering(false)}
+                className="w-full h-full object-cover"
+              />
+              {isVideoBuffering && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[2px] pointer-events-none transition-opacity">
+                  <div className="flex flex-col items-center gap-2">
+                    <ApertureIrisIcon className="w-7 h-7 text-glow animate-spin" />
+                    <span className="font-mono text-[10px] text-ink-dim bg-black/70 px-2 py-0.5 rounded border border-white/10">
+                      Loading HD/4K Video…
+                    </span>
+                  </div>
+                </div>
+              )}
+            </>
           ) : item.type === 'generative' ? (
             <div className="w-full h-full bg-void flex flex-col items-center justify-center text-ink-dim p-4">
               <ApertureIrisIcon className="w-12 h-12 text-glow mb-3 animate-spin-slow" />
