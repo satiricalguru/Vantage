@@ -22,6 +22,8 @@ export function createWallpaperWindow(display: Display): BrowserWindow {
     type: 'desktop',
     frame: false,
     transparent: false,
+    backgroundColor: '#000000',
+    enableLargerThanScreen: true,
     resizable: false,
     movable: false,
     minimizable: false,
@@ -83,12 +85,16 @@ export function syncWallpaperWindows(): void {
       createWallpaperWindow(display)
     } else {
       const win = wallpaperWindows.get(display.id)
-      if (win) {
+      if (win && !win.isDestroyed()) {
         win.setBounds({
           x: display.bounds.x,
           y: display.bounds.y,
           width: display.bounds.width,
           height: display.bounds.height
+        })
+        win.setVisibleOnAllWorkspaces(true, {
+          visibleOnFullScreen: true,
+          skipTransformProcessType: true
         })
       }
     }
@@ -205,9 +211,26 @@ export function isWallpaperRenderer(contents: WebContents): boolean {
   return false
 }
 
+export function getDisplayIdForWebContents(contents: WebContents): number | null {
+  for (const [id, win] of wallpaperWindows.entries()) {
+    if (!win.isDestroyed() && win.webContents.id === contents.id) return id
+  }
+  return null
+}
+
+let displayDebounceTimer: NodeJS.Timeout | null = null
+
+function debouncedDisplaySync(): void {
+  syncWallpaperWindows()
+  if (displayDebounceTimer) clearTimeout(displayDebounceTimer)
+  displayDebounceTimer = setTimeout(() => {
+    syncWallpaperWindows()
+  }, 200)
+}
+
 export function setupDisplayListeners(): void {
-  screen.on('display-added', syncWallpaperWindows)
-  screen.on('display-removed', syncWallpaperWindows)
-  screen.on('display-metrics-changed', syncWallpaperWindows)
+  screen.on('display-added', debouncedDisplaySync)
+  screen.on('display-removed', debouncedDisplaySync)
+  screen.on('display-metrics-changed', debouncedDisplaySync)
 }
 

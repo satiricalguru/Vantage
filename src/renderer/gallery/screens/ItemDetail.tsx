@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useGalleryStore, WallpaperItem } from '../store/useGalleryStore'
 import { ApertureIrisIcon } from '../components/ApertureIrisIcon'
-import { X, Heart, Monitor, Check, Trash2 } from 'lucide-react'
+import { X, Heart, Monitor, Check, Trash2, Layers } from 'lucide-react'
 
 interface ItemDetailProps {
   item: WallpaperItem
@@ -9,8 +9,9 @@ interface ItemDetailProps {
 }
 
 export const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
-  const { activeCategory, displays, applyWallpaper, toggleFavorite, deleteWallpaper } = useGalleryStore()
+  const { activeCategory, displays, applyWallpaper, applyToAllDisplays, toggleFavorite, deleteWallpaper } = useGalleryStore()
   const isImportedCategory = activeCategory === 'imported'
+  const isAllAssigned = displays.length > 0 && displays.every((d) => d.assignedWallpaperId === item.id)
 
   // M-9 FIX: Close modal on Escape key
   useEffect(() => {
@@ -102,9 +103,24 @@ export const ItemDetail: React.FC<ItemDetailProps> = ({ item, onClose }) => {
 
             {/* Display assignment buttons */}
             <div className="my-6">
-              <label className="text-xs font-mono uppercase text-ink-dim block mb-2">
-                Apply to Display
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-mono uppercase text-ink-dim">
+                  Apply to Display
+                </label>
+                {displays.length > 1 && (
+                  <button
+                    onClick={() => applyToAllDisplays(item.id)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono transition border ${
+                      isAllAssigned
+                        ? 'bg-glow/15 text-glow border-glow/30'
+                        : 'bg-void text-ink-dim hover:text-glow border-line hover:border-glow/30'
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>{isAllAssigned ? 'Applied to All' : 'Apply to All Displays'}</span>
+                  </button>
+                )}
+              </div>
               <div className="space-y-2">
                 {displays.map((disp) => {
                   const isAssigned = disp.assignedWallpaperId === item.id

@@ -23,6 +23,7 @@ interface GalleryStore {
   fetchWallpapers: (silent?: boolean) => Promise<void>
   fetchDisplays: () => Promise<void>
   applyWallpaper: (displayId: number, wallpaperId: string) => Promise<void>
+  applyToAllDisplays: (wallpaperId: string) => Promise<void>
   toggleFavorite: (wallpaperId: string, currentFav?: boolean) => Promise<void>
   deleteWallpaper: (wallpaperId: string) => Promise<void>
   importFile: () => Promise<void>
@@ -113,6 +114,20 @@ export const useGalleryStore = create<GalleryStore>((set, get) => ({
         await get().fetchDisplays()
       } catch (error) {
         set({ error: error instanceof Error ? error.message : 'Unable to apply wallpaper.' })
+      }
+    }
+  },
+
+  applyToAllDisplays: async (wallpaperId) => {
+    if (window.galleryApi) {
+      try {
+        const displays = get().displays
+        for (const disp of displays) {
+          await window.galleryApi.applyToDisplay(disp.id, wallpaperId)
+        }
+        await get().fetchDisplays()
+      } catch (error) {
+        set({ error: error instanceof Error ? error.message : 'Unable to apply wallpaper to all displays.' })
       }
     }
   },

@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { app } from 'electron'
+import { app, screen } from 'electron'
 import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -346,20 +346,51 @@ export function setDisplayAssignment(displayId: string, wallpaperId: string): vo
 export function getDisplayAssignment(displayId: string): { wallpaperId: string | null; performanceMode: string } {
   const database = initDatabase()
   const row = database.prepare('SELECT * FROM display_assignments WHERE display_id = ?').get(displayId) as DisplayAssignmentRow | undefined
-  if (!row) {
-    return { wallpaperId: DEFAULT_WALLPAPER_ID, performanceMode: 'balanced' }
+  if (row && row.wallpaper_id) {
+    const exists = database.prepare('SELECT 1 FROM wallpapers WHERE id = ?').get(row.wallpaper_id)
+    if (exists) {
+      return {
+        wallpaperId: row.wallpaper_id,
+        performanceMode: row.performance_mode || 'balanced'
+      }
+    }
   }
 
-  // A folder watcher can remove a wallpaper after it has been assigned. Never
-  // return a dangling ID to the renderer; it would otherwise render a blank
-  // wallpaper window until the user manually reassigns it.
-  let wallpaperId = row.wallpaper_id || DEFAULT_WALLPAPER_ID
-  const exists = database.prepare('SELECT 1 FROM wallpapers WHERE id = ?').get(wallpaperId)
-  if (!exists) wallpaperId = DEFAULT_WALLPAPER_ID
+  // Fallback for new/unassigned displays (e.g. iPad Sidecar or external screens):
+  // Inherit the primary display's active assignment so all displays share the current wallpaper seamlessly.
+  try {
+    const primaryDisplay = screen.getPrimaryDisplay()
+    if (primaryDisplay && String(primaryDisplay.id) !== displayId) {
+      const primaryRow = database.prepare('SELECT * FROM display_assignments WHERE display_id = ?').get(String(primaryDisplay.id)) as DisplayAssignmentRow | undefined
+      if (primaryRow && primaryRow.wallpaper_id) {
+        const exists = database.prepare('SELECT 1 FROM wallpapers WHERE id = ?').get(primaryRow.wallpaper_id)
+        if (exists) {
+          return {
+            wallpaperId: primaryRow.wallpaper_id,
+            performanceMode: primaryRow.performance_mode || 'balanced'
+          }
+        }
+      }
+    }
+
+    // Secondary fallback: check any other assigned display in the database
+    const anyAssigned = database.prepare('SELECT wallpaper_id, performance_mode FROM display_assignments WHERE wallpaper_id IS NOT NULL ORDER BY rowid DESC LIMIT 1').get() as DisplayAssignmentRow | undefined
+    if (anyAssigned && anyAssigned.wallpaper_id) {
+      const exists = database.prepare('SELECT 1 FROM wallpapers WHERE id = ?').get(anyAssigned.wallpaper_id)
+      if (exists) {
+        return {
+          wallpaperId: anyAssigned.wallpaper_id,
+          performanceMode: anyAssigned.performance_mode || 'balanced'
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[DB] Fallback display assignment query warning:', err)
+  }
 
   return {
-    wallpaperId,
-    performanceMode: row.performance_mode || 'balanced'
+    wallpaperId: DEFAULT_WALLPAPER_ID,
+    performanceMode: 'balanced'
   }
 }
 

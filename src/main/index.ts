@@ -5,7 +5,7 @@ import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { Readable } from 'node:stream'
 import { initDatabase, getAllWallpapers, getWallpaperById, setDisplayAssignment, getDisplayAssignment, setPerformanceMode, toggleFavoriteInDb, deleteWallpaperFromDb, addWallpaperToDb, pruneUserFolderEntries, closeDatabase, getWallpaperFileReferences } from './db'
-import { syncWallpaperWindows, applyWallpaperToDisplay, setPerformanceModeForDisplay, setupDisplayListeners, getGlobalPlaybackState, setGalleryWindowGetter, broadcastCacheProgress, isWallpaperRenderer } from './wallpaperWindow'
+import { syncWallpaperWindows, applyWallpaperToDisplay, setPerformanceModeForDisplay, setupDisplayListeners, getGlobalPlaybackState, setGalleryWindowGetter, broadcastCacheProgress, isWallpaperRenderer, getDisplayIdForWebContents } from './wallpaperWindow'
 import { createTray } from './tray'
 import { initPowerManager } from './powerManager'
 import { ensureCached, getCacheStatus, clearCache, evictToLimit, setCacheLimitBytes, getCacheDir, isAllowedRemoteMediaUrl, onCacheProgress, getCacheLimitBytes, CACHE_FLOOR_BYTES, CACHE_CEILING_BYTES } from './videoCache'
@@ -748,14 +748,17 @@ function registerIpcHandlers(): void {
     const win = BrowserWindow.fromWebContents(webContents)
     if (!win) return { wallpaper: null, performanceMode: 'balanced', isPlaying: true }
 
-    const displays = screen.getAllDisplays()
-    const matchingDisplay = displays.find(
-      (d) =>
-        d.bounds.x === win.getBounds().x &&
-        d.bounds.y === win.getBounds().y
-    ) || displays[0]
+    let matchingDisplayId = getDisplayIdForWebContents(webContents)
+    if (matchingDisplayId === null) {
+      try {
+        const matchingDisplay = screen.getDisplayMatching(win.getBounds()) || screen.getPrimaryDisplay()
+        matchingDisplayId = matchingDisplay.id
+      } catch {
+        matchingDisplayId = screen.getPrimaryDisplay().id
+      }
+    }
 
-    const assignment = getDisplayAssignment(String(matchingDisplay.id))
+    const assignment = getDisplayAssignment(String(matchingDisplayId))
     const wallpaper = getWallpaperById(assignment.wallpaperId || DEFAULT_WALLPAPER_ID) || getWallpaperById(DEFAULT_WALLPAPER_ID)
 
     return {
