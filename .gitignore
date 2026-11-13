@@ -38,3 +38,6 @@ resources/icons/icon.png
 
 # Agent configuration
 .agents/
+
+# Vercel CLI project link
+.vercel

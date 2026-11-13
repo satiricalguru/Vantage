@@ -21,6 +21,18 @@ if (!fs.existsSync(resourcesIconsDir)) fs.mkdirSync(resourcesIconsDir, { recursi
 
 const tmpPng = path.join(buildDir, 'tmp_1024_master.png')
 
+// Windows/Linux hosts can't run the AppKit renderer: reuse the committed master PNG
+// (electron-builder converts it to .ico for Windows).
+if (process.platform !== 'darwin') {
+  if (!fs.existsSync(resourcesPngTarget)) {
+    console.error('[BuildIcon] resources/icons/icon.png missing and SVG rendering needs macOS.')
+    process.exit(1)
+  }
+  fs.copyFileSync(resourcesPngTarget, pngTarget)
+  console.log('[BuildIcon] Non-macOS host: copied resources/icons/icon.png → build/icon.png')
+  process.exit(0)
+}
+
 // Render SVG into 1024x1024 master PNG using native macOS AppKit
 const swiftScript = `
 import AppKit

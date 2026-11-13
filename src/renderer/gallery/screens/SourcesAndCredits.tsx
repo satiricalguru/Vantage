@@ -1,87 +1,82 @@
 import React from 'react'
-import { ShieldCheck, CheckCircle2, Globe, Heart } from 'lucide-react'
+import { ExternalLink, Globe, FolderDown, Package, Github } from 'lucide-react'
+import { GenerativeIcon } from '../components/GenerativeIcon'
+import { useGalleryStore } from '../store/useGalleryStore'
+
+const isMac = navigator.userAgent.includes('Mac')
 
 export const SourcesAndCredits: React.FC = () => {
+  const { counts } = useGalleryStore()
+  const open = (url: string) => window.galleryApi?.openExternal(url)
+
   const sources = [
     {
-      name: 'NASA Image & Video Library',
-      type: 'Space & Cosmic Media',
-      license: 'Public Domain / US Government Work',
-      attribution: 'Courtesy NASA / JPL / STScI / GSFC.',
-      url: 'https://www.nasa.gov/multimedia/guidelines/'
+      icon: Globe,
+      name: 'MotionBGS',
+      what: 'Most of the streamed video catalog',
+      detail: 'Videos stream from motionbgs.com on demand and are cached locally. The artwork belongs to its original creators and rights holders; check MotionBGS’s terms before redistributing any file.',
+      url: 'https://motionbgs.com'
     },
     {
-      name: 'Generative Canvas Engine',
-      type: 'Procedural WebGL / HTML5 Canvas',
-      license: '100% Original Code (In-house Engine)',
-      attribution: 'Built natively in TypeScript & WebGL.',
-      url: '#'
+      icon: Package,
+      name: 'Bundled wallpapers',
+      what: 'A few loops that ship inside the app',
+      detail: 'Included so Vantage works offline on first launch.'
     },
     {
-      name: 'AI Art Pipeline',
-      type: 'Generative Stills & Motion Overlay',
-      license: 'Original AI Generated Content',
-      attribution: 'Synthesized per request, explicitly labeled as AI-generated.',
-      url: '#'
+      icon: GenerativeIcon,
+      name: 'Vantage generative engine',
+      what: `${counts.generative ? `${counts.generative} procedural scenes` : 'Procedural scenes'} rendered live on your GPU`,
+      detail: 'Original shader code, MIT licensed with the rest of Vantage. Nothing is downloaded.'
+    },
+    {
+      icon: FolderDown,
+      name: 'Your imports',
+      what: 'Files you add',
+      detail: 'Imported videos and images stay on your Mac or PC and are never uploaded anywhere.'
     }
   ]
 
-  const openLink = (url: string) => {
-    if (window.galleryApi && url !== '#') {
-      window.galleryApi.openExternal(url)
-    }
-  }
-
   return (
-    <div className="p-6 pt-8 max-w-4xl mx-auto space-y-6 animate-fade-in">
-      <div className="[-webkit-app-region:drag]">
-        <div className="flex items-center gap-2 text-glow font-mono text-xs uppercase tracking-wider mb-1">
-          <ShieldCheck className="w-4 h-4" />
-          <span>Legal Compliance & Licensing Framework</span>
+    <div className="h-full overflow-y-auto">
+      <div className={`mx-auto max-w-3xl space-y-5 px-8 pb-12 animate-rise ${isMac ? 'pt-12' : 'pt-8'}`}>
+        <div className="[-webkit-app-region:drag]">
+          <h1 className="text-[24px] font-semibold tracking-tight text-ink">Sources & credits</h1>
+          <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-ink-dim">
+            Where your wallpapers come from. Each wallpaper’s detail view shows its own source and license.
+          </p>
         </div>
-        <h1 className="text-2xl font-bold text-ink">Content Sources & Credits</h1>
-        <p className="text-sm text-ink-dim mt-1">
-          Vantage is committed to 100% legally sound content sourcing. All media is strictly
-          traced to verified open APIs, public domain databases, procedural code, or user imports.
-        </p>
-      </div>
 
-      <div className="space-y-4">
-        {sources.map((src) => (
-          <div
-            key={src.name}
-            className="bg-panel border border-line rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-          >
-            <div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-glow" />
-                <h3 className="text-base font-semibold text-ink">{src.name}</h3>
-                <span className="font-mono text-[10px] text-ink-dim uppercase bg-void px-2 py-0.5 rounded border border-line">
-                  {src.type}
-                </span>
+        <div className="grid gap-3">
+          {sources.map((s) => {
+            const Icon = s.icon
+            return (
+              <div key={s.name} className="flex gap-4 rounded-2xl border border-line bg-panel/60 p-4 shadow-card">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-glow/10 text-glow">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <h3 className="text-[14px] font-semibold text-ink">{s.name}</h3>
+                    <span className="text-[12px] text-ink-dim">{s.what}</span>
+                  </div>
+                  <p className="mt-1 text-[12px] leading-relaxed text-ink-dim">{s.detail}</p>
+                </div>
+                {s.url && (
+                  <button onClick={() => open(s.url!)} className="btn-ghost h-8 self-start px-2.5 text-[12px]">
+                    Visit <ExternalLink className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
-              <p className="text-xs font-mono text-glow mt-1">{src.license}</p>
-              <p className="text-xs text-ink-dim mt-0.5">{src.attribution}</p>
-            </div>
+            )
+          })}
+        </div>
 
-            {src.url !== '#' && (
-              <button
-                onClick={() => openLink(src.url)}
-                className="flex items-center gap-1 text-xs font-mono text-ink-dim hover:text-glow transition self-start sm:self-center"
-              >
-                <Globe className="w-3.5 h-3.5" />
-                <span>License Terms</span>
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-void border border-line rounded-xl p-4 text-xs font-mono text-ink-dim flex items-center justify-between">
-        <span>Vantage — Free & Open Source macOS Utility</span>
-        <div className="flex items-center gap-1 text-glow">
-          <Heart className="w-3.5 h-3.5 fill-glow" />
-          <span>Built for macOS</span>
+        <div className="flex items-center justify-between rounded-2xl border border-line bg-void/60 px-4 py-3.5 text-[12px] text-ink-dim">
+          <span>Vantage is free and open source under the MIT License.</span>
+          <button onClick={() => open('https://github.com/satiricalguru/Vantage')} className="flex items-center gap-1.5 text-ink hover:text-glow">
+            <Github className="h-4 w-4" /> Source code
+          </button>
         </div>
       </div>
     </div>

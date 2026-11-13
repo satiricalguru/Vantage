@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 body {
-  background-color: #0A0B0D;
-  color: #ECEDEF;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+  background-color: #07080b;
+  color: #eef0f4;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI Variable', 'Segoe UI', 'Helvetica Neue', sans-serif;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -13,21 +13,51 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* In the base layer so utilities like outline-none can still override it. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.85);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgba(16, 18, 22, 0.72);
+    backdrop-filter: blur(22px) saturate(1.4);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-[12px] font-medium text-ink-dim transition hover:border-line-strong hover:text-ink;
+  }
+  .chip-on {
+    @apply border-glow/40 bg-glow/10 text-glow hover:text-glow;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-[13px] font-medium transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-primary {
+    @apply btn bg-glow text-void hover:bg-white/85;
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-white/[0.03] text-ink hover:border-line-strong hover:bg-white/[0.06];
+  }
+  .kbd {
+    @apply inline-flex h-5 min-w-[20px] items-center justify-center rounded-md border border-line-strong bg-white/[0.04] px-1.5 font-mono text-[10px] text-ink-dim;
+  }
+  .skeleton {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.07) 50%, rgba(255, 255, 255, 0.03) 75%);
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+}
+
 /* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 10px; border: 3px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.16); background-clip: content-box; border: 3px solid transparent; }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #26282E;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #383B42;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

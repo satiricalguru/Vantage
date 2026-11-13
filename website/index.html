@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vantage — Live Wallpapers for Mac &amp; Windows</title>
+    <meta name="description" content="Vantage is a free, open-source live wallpaper engine. 1,300+ 4K motion wallpapers, multi-display support and battery-aware playback." />
+    <meta name="theme-color" content="#06070a" />
+    <!-- The page manages its own light→dark transition; stop browsers from auto-darkening it. -->
+    <meta name="color-scheme" content="light only" />
+    <link rel="canonical" href="https://vantage-five-navy.vercel.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://vantage-five-navy.vercel.app/" />
+    <meta property="og:site_name" content="Vantage" />
+    <meta property="og:title" content="Vantage — Your desktop, alive." />
+    <meta property="og:description" content="Free, open-source live wallpapers. 1,300+ 4K motion wallpapers, every display, zero lag." />
+    <meta property="og:image" content="https://vantage-five-navy.vercel.app/og.jpg" />
+    <meta property="og:image:width" content="1600" />
+    <meta property="og:image:height" content="1000" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Vantage — Your desktop, alive." />
+    <meta name="twitter:description" content="Free, open-source live wallpapers for Mac and Windows." />
+    <meta name="twitter:image" content="https://vantage-five-navy.vercel.app/og.jpg" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Vantage","applicationCategory":"DesktopEnhancementApplication","operatingSystem":"macOS, Windows","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"license":"https://opensource.org/licenses/MIT","url":"https://vantage-five-navy.vercel.app/","downloadUrl":"https://github.com/satiricalguru/Vantage/releases/latest","codeRepository":"https://github.com/satiricalguru/Vantage"}</script>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script>document.documentElement.classList.replace('no-js', 'js')</script>
+  </head>
+  <body>
+    <div class="loader" aria-hidden="true">
+      <div class="loader-inner">
+        <svg class="loader-iris" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.2"/><path d="M12 3L16 12M19.8 7.5L12 16M19.8 16.5L9 12M12 21L8 12M4.2 16.5L12 8M4.2 7.5L15 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <span class="loader-count">0</span>
+      </div>
+    </div>
+
+    <canvas id="gl" aria-hidden="true"></canvas>
+    <div class="flash" aria-hidden="true"></div>
+    <div class="progress" aria-hidden="true"></div>
+    <div class="cursor" aria-hidden="true"><div class="cursor-ring"><span class="cursor-label"></span></div><div class="cursor-dot"></div></div>
+    <div class="preview" aria-hidden="true"><img alt="" /></div>
+
+    <header class="nav">
+      <a href="#top" class="brand" aria-label="Vantage home">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 3L16 12M19.8 7.5L12 16M19.8 16.5L9 12M12 21L8 12M4.2 16.5L12 8M4.2 7.5L15 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span>VANTAGE</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#library">Library</a>
+        <a href="#features">Features</a>
+        <a href="https://github.com/satiricalguru/Vantage" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <a href="#download" class="nav-cta" data-cursor="Get it">Download</a>
+    </header>
+
+    <main>
+      <section class="hero" id="top">
+        <h1 class="hero-title">
+          <span class="line"><span>Your desktop,</span></span>
+          <span class="line"><span>wide awake.</span></span>
+        </h1>
+        <div class="hero-card" data-hero-card data-cursor="Play">
+          <div class="hero-card-fallback"></div>
+          <div class="hero-card-tags">
+            <span>4K · 60 FPS</span><span>Multi-display</span><span>Battery aware</span>
+          </div>
+        </div>
+        <div class="hero-foot">
+          <span>+</span>
+          <span>Scroll to explore</span>
+          <span>+</span>
+        </div>
+      </section>
+
+      <section class="statement">
+        <h2 class="big" data-words>Living wallpapers,<br />zero compromise.</h2>
+        <div class="statement-body">
+          <p class="reveal">Vantage turns your desktop into a moving canvas. Desktop-level native windows, hardware-accelerated 4K streaming and battery-aware playback keep your machine fast while your wallpaper comes alive.</p>
+          <a href="#library" class="pill" data-cursor="Look"><i></i>Browse the library</a>
+        </div>
+      </section>
+
+      <section class="library" id="library">
+        <div class="library-head">
+          <p class="eyebrow">The library</p>
+          <h2 class="big" data-words><span class="count" data-count="1300">1,300</span>+ wallpapers<br />that refuse to sit still.</h2>
+          <p class="library-cats">Anime · Gaming · Heroes · Nature · Space · AI art · Generative</p>
+        </div>
+        <div class="marquee" data-speed="38"><div class="marquee-track"></div></div>
+        <div class="marquee" data-speed="-30"><div class="marquee-track"></div></div>
+      </section>
+
+      <section class="features" id="features">
+        <p class="eyebrow">Why Vantage</p>
+        <ol class="feature-list" data-stagger>
+          <li data-img="/thumbs/w26.jpg"><span class="n">01</span><div><h3>Every display, its own world</h3><p>Assign a different wallpaper to each monitor. Hot-plug a screen and Vantage picks up right where you left off.</p></div></li>
+          <li data-img="/thumbs/w12.jpg"><span class="n">02</span><div><h3>4K that sips power</h3><p>Range-request streaming straight from disk and automatic battery saver keep fans quiet and frames smooth.</p></div></li>
+          <li data-img="/thumbs/w03.jpg"><span class="n">03</span><div><h3>Bring your own</h3><p>Drag in MP4, MOV, WebM, PNG, JPG or WebP — or drop files in a watched folder and they appear instantly.</p></div></li>
+          <li data-img="/thumbs/w31.jpg"><span class="n">04</span><div><h3>Generative canvases</h3><p>Procedural, cursor-reactive scenes rendered live on your GPU. Nothing to download, nothing to repeat.</p></div></li>
+          <li data-img="/thumbs/w19.jpg"><span class="n">05</span><div><h3>Lives in your menu bar</h3><p>Pause, swap or tune playback from the tray. Hide the Dock icon and forget it is running.</p></div></li>
+        </ol>
+      </section>
+
+      <section class="dive" id="dive" aria-label="Step through your desktop">
+        <div class="dive-sticky">
+          <p class="dive-text" aria-hidden="true">
+            <span class="dive-line" data-split>STEP THROUGH</span>
+            <span class="dive-line" data-split>YOUR DESKTOP</span>
+          </p>
+          <p class="sr-only">Step through your desktop.</p>
+          <p class="dive-caption">Every wallpaper is a window. Scroll to fall through.</p>
+        </div>
+      </section>
+
+      <section class="download" id="download">
+        <p class="eyebrow">Free &amp; open source</p>
+        <h2 class="download-title" data-words>Make it<br />move.</h2>
+        <div class="dl-buttons" data-stagger>
+          <a class="dl-btn" data-os="mac" href="https://github.com/satiricalguru/Vantage/releases/latest" data-cursor="Download">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 12.6c-.02-2.1 1.72-3.12 1.8-3.17-1-1.43-2.52-1.63-3.06-1.65-1.29-.13-2.53.77-3.18.77-.66 0-1.67-.75-2.75-.73-1.4.02-2.7.83-3.43 2.09-1.48 2.55-.38 6.31 1.05 8.38.71 1.01 1.54 2.14 2.62 2.1 1.06-.04 1.46-.67 2.73-.67 1.27 0 1.63.67 2.74.65 1.13-.02 1.85-1.02 2.54-2.04.81-1.17 1.14-2.31 1.15-2.37-.03-.01-2.19-.83-2.21-3.36zM14.3 6.43c.57-.7.97-1.66.86-2.63-.83.04-1.86.56-2.45 1.25-.53.61-1 1.6-.88 2.55.93.07 1.89-.47 2.47-1.17z"/></svg>
+            <span><small>Download for</small>macOS</span>
+          </a>
+          <a class="dl-btn" data-os="win" href="https://github.com/satiricalguru/Vantage/releases/latest" data-cursor="Download">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.1l7.4-1v7.2H3V5.1zm0 13.8l7.4 1v-7.1H3v6.1zm8.2 1.1L21 21.4v-8.6h-9.8V20zm0-15.9v7.3H21V2.6l-9.8 1.5z"/></svg>
+            <span><small>Download for</small>Windows</span>
+          </a>
+        </div>
+        <p class="dl-meta" data-dl-meta>Apple Silicon &amp; Intel · Windows 10/11 · MIT licensed</p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-grid" data-stagger>
+        <div>
+          <p class="footer-big" data-words>Your desktop,<br />alive.</p>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow">Project</p>
+          <a href="https://github.com/satiricalguru/Vantage" target="_blank" rel="noopener">Source on GitHub</a>
+          <a href="https://github.com/satiricalguru/Vantage/releases" target="_blank" rel="noopener">All releases</a>
+          <a href="https://github.com/satiricalguru/Vantage/issues" target="_blank" rel="noopener">Report an issue</a>
+        </div>
+        <div class="footer-col">
+          <p class="eyebrow">Explore</p>
+          <a href="#library">Library</a>
+          <a href="#features">Features</a>
+          <a href="#download">Download</a>
+        </div>
+      </div>
+      <div class="footer-wordmark" aria-hidden="true"><span style="--li:0">V</span><span style="--li:1">A</span><span style="--li:2">N</span><span style="--li:3">T</span><span style="--li:4">A</span><span style="--li:5">G</span><span style="--li:6">E</span></div>
+      <div class="footer-base"><span>© 2026 Vantage · MIT License</span><span>Wallpapers remain the property of their respective creators.</span></div>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

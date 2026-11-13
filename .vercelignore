@@ -1,0 +1,6 @@
+# Vercel only builds the landing page (Project Settings → Root Directory = website).
+/*
+!/website
+/website/node_modules
+/website/dist
+/website/.vercel

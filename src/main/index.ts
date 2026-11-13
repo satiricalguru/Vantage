@@ -4,13 +4,14 @@ import fs from 'node:fs'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { Readable } from 'node:stream'
-import { initDatabase, getAllWallpapers, getWallpaperById, setDisplayAssignment, getDisplayAssignment, setPerformanceMode, toggleFavoriteInDb, deleteWallpaperFromDb, addWallpaperToDb, pruneUserFolderEntries, closeDatabase, getWallpaperFileReferences } from './db'
+import { initDatabase, getAllWallpapers, getCategoryCounts, getWallpaperById, setDisplayAssignment, getDisplayAssignment, setPerformanceMode, toggleFavoriteInDb, deleteWallpaperFromDb, addWallpaperToDb, pruneUserFolderEntries, closeDatabase, getWallpaperFileReferences } from './db'
 import { syncWallpaperWindows, applyWallpaperToDisplay, setPerformanceModeForDisplay, setupDisplayListeners, getGlobalPlaybackState, setGalleryWindowGetter, broadcastCacheProgress, isWallpaperRenderer, getDisplayIdForWebContents } from './wallpaperWindow'
-import { createTray } from './tray'
+import { createTray, refreshTrayMenu } from './tray'
 import { initPowerManager } from './powerManager'
 import { ensureCached, getCacheStatus, clearCache, evictToLimit, setCacheLimitBytes, getCacheDir, isAllowedRemoteMediaUrl, onCacheProgress, getCacheLimitBytes, CACHE_FLOOR_BYTES, CACHE_CEILING_BYTES } from './videoCache'
 import { syncStaticWallpapers, getStaticSourceDirs } from './staticLibrary'
 import store from './store'
+import { setDockVisible, isDockVisible, buildAppMenu, onDockVisibilityChange, revealWindow } from './dock'
 import { INITIAL_WALLPAPERS } from './contentSources'
 import { ALLOWED_SETTINGS_KEYS, DEFAULT_WALLPAPER_ID } from '../shared/types'
 import { toMediaUrl } from './mediaUrl'
@@ -287,10 +288,8 @@ if (!gotTheLock) {
   app.quit()
 } else {
   app.on('second-instance', () => {
-    if (galleryWindow) {
-      if (galleryWindow.isMinimized()) galleryWindow.restore()
-      galleryWindow.show()
-      galleryWindow.focus()
+    if (galleryWindow && !galleryWindow.isDestroyed()) {
+      revealWindow(galleryWindow)
     } else {
       createGalleryWindow()
     }
@@ -333,9 +332,7 @@ function setupDockIcon(): void {
 
 function createGalleryWindow(): BrowserWindow {
   if (galleryWindow && !galleryWindow.isDestroyed()) {
-    if (galleryWindow.isMinimized()) galleryWindow.restore()
-    galleryWindow.show()
-    galleryWindow.focus()
+    revealWindow(galleryWindow)
     setupDockIcon()
     return galleryWindow
   }
@@ -351,11 +348,10 @@ function createGalleryWindow(): BrowserWindow {
     title: 'Vantage',
     icon: iconImage && !iconImage.isEmpty() ? iconImage : iconPath,
     show: false,
-    frame: false,
-    titleBarStyle: 'hiddenInset',
-    vibrancy: 'sidebar',
-    visualEffectState: 'active',
-    backgroundColor: '#0A0B0D',
+    ...(process.platform === 'darwin'
+      ? { frame: false, titleBarStyle: 'hiddenInset' as const, vibrancy: 'sidebar' as const, visualEffectState: 'active' as const }
+      : { titleBarStyle: 'hidden' as const, titleBarOverlay: { color: '#0d0f13', symbolColor: '#EEF0F4', height: 40 } }),
+    backgroundColor: '#07080B',
     webPreferences: {
       preload: path.join(__dirname, '../preload/gallery.js'),
       contextIsolation: true,
@@ -380,8 +376,7 @@ function createGalleryWindow(): BrowserWindow {
   }
 
   galleryWindow.once('ready-to-show', () => {
-    galleryWindow?.show()
-    galleryWindow?.focus()
+    if (galleryWindow) revealWindow(galleryWindow)
   })
 
   galleryWindow.on('close', (e) => {
@@ -406,6 +401,11 @@ function registerIpcHandlers(): void {
     if (query !== undefined && typeof query !== 'string') throw new Error('Invalid wallpaper query')
     if (typeof query === 'string' && query.length > 200) throw new Error('Wallpaper query is too long')
     return getAllWallpapers(category, query)
+  })
+
+  ipcMain.handle('wallpaper:counts', (event) => {
+    requireTrustedIpcSender(event)
+    return getCategoryCounts()
   })
 
   ipcMain.handle('wallpaper:apply-to-display', (event, payload) => {
@@ -442,7 +442,7 @@ function registerIpcHandlers(): void {
     if (!item) throw new Error('Wallpaper does not exist')
 
     // Never allow built-in catalog wallpapers to be physically deleted.
-    const BUILTIN_SOURCES = new Set(['ai', 'custom', 'local'])
+    const BUILTIN_SOURCES = new Set(['ai', 'custom', 'local', 'motionbgs', 'vantage'])
     if (BUILTIN_SOURCES.has(item.source)) {
       throw new Error('Cannot delete built-in wallpaper')
     }
@@ -527,7 +527,7 @@ function registerIpcHandlers(): void {
     requireTrustedIpcSender(event)
     return {
       openAtLogin: app.getLoginItemSettings().openAtLogin,
-      showInDock: store.get('showInDock', false),
+      showInDock: isDockVisible(),
       maxCacheSizeGb: store.get('maxCacheSizeGb', 5),
       theme: store.get('theme', 'dark')
     }
@@ -578,11 +578,7 @@ function registerIpcHandlers(): void {
     }
 
     if ('showInDock' in validated) {
-      if (validated.showInDock && app.dock) {
-        app.dock.show()
-      } else if (app.dock) {
-        app.dock.hide()
-      }
+      setDockVisible(validated.showInDock as boolean, { persist: false })
     }
     return true
   })
@@ -970,10 +966,16 @@ app.whenReady().then(async () => {
   })
 
   setupDockIcon()
-  const showInDock = store.get('showInDock', false)
-  if (app.dock && !showInDock) {
-    app.dock.hide()
+  setDockVisible(isDockVisible(), { persist: false })
+  const openPreferences = () => {
+    const win = createGalleryWindow()
+    win.webContents.send('navigate', 'settings')
   }
+  buildAppMenu(() => createGalleryWindow(), openPreferences)
+  onDockVisibilityChange(() => {
+    buildAppMenu(() => createGalleryWindow(), openPreferences)
+    refreshTrayMenu()
+  })
 
   initDatabase()
   enqueueScan()
