@@ -1,264 +1,248 @@
-<div align="center">
-  <img src="assets/icon.svg" width="160" height="160" alt="Vantage App Icon" />
-  <h1>Vantage</h1>
-  <p><strong>A Next-Generation, Ultra-Performance Native Live Wallpaper Engine for macOS 🌌</strong></p>
-
-  <p>
-    <a href="https://github.com/satiricalguru/Vantage/stargazers"><img src="https://img.shields.io/github/stars/satiricalguru/Vantage?style=for-the-badge&color=00F2FE&logo=github" alt="Stars"></a>
-    <a href="https://github.com/satiricalguru/Vantage/network/members"><img src="https://img.shields.io/github/forks/satiricalguru/Vantage?style=for-the-badge&color=9B51E0&logo=github" alt="Forks"></a>
-    <a href="https://github.com/satiricalguru/Vantage/releases"><img src="https://img.shields.io/github/v/release/satiricalguru/Vantage?style=for-the-badge&color=FF0844&logo=apple" alt="Release"></a>
-    <a href="https://github.com/satiricalguru/Vantage/blob/main/LICENSE"><img src="https://img.shields.io/github/license/satiricalguru/Vantage?style=for-the-badge&color=4FACFE" alt="License"></a>
-  </p>
-
-  <p>
-    <a href="#-key-features">Key Features</a> •
-    <a href="#-screenshots">Screenshots</a> •
-    <a href="#-supported-mac-displays--resolutions">Supported Displays</a> •
-    <a href="#-technical-architecture">Architecture</a> •
-    <a href="#-performance--battery-intelligence">Performance</a> •
-    <a href="#-tech-stack">Tech Stack</a> •
-    <a href="#-getting-started">Getting Started</a> •
-    <a href="#%EF%B8%8F-building-from-source">Build Instructions</a>
-  </p>
-</div>
-
-<hr />
-
-## 🌟 Overview
-
-**Vantage** is a free, open-source, ultra-performance native live wallpaper application engineered specifically for macOS. Built with high-efficiency streaming protocols and direct macOS Desktop level window hooks (`kCGDesktopWindowLevel`), Vantage transforms your desktop into a fluid canvas without sacrificing performance or battery life.
-
-Whether you want crisp high-resolution video loops, interactive particle physics, AI-generated ambient wallpapers, or local imports, Vantage delivers a seamless visual experience across single and multi-monitor setups. Optional remote-source adapters are kept behind the main-process network boundary.
-
----
-
-## 📸 Screenshots
+<a id="top"></a>
 
 <div align="center">
-  <table>
-    <tr>
-      <td align="center">
-        <img src="assets/screenshots/gallery.png" alt="Wallpaper Gallery" width="420" />
-        <br />
-        <sub><b>All Wallpapers Gallery</b></sub>
-      </td>
-      <td align="center">
-        <img src="assets/screenshots/my-imports.png" alt="My Imports & Custom Wallpapers" width="420" />
-        <br />
-        <sub><b>My Imports & Delete Controls</b></sub>
-      </td>
-    </tr>
-    <tr>
-      <td align="center">
-        <img src="assets/screenshots/preferences.png" alt="Preferences & Energy Controls" width="420" />
-        <br />
-        <sub><b>Preferences & Energy Management</b></sub>
-      </td>
-      <td align="center">
-        <img src="assets/screenshots/credits.png" alt="Sources & Credits" width="420" />
-        <br />
-        <sub><b>Content Sources & Licensing Framework</b></sub>
-      </td>
-    </tr>
-  </table>
+
+<a href="https://vantage-five-navy.vercel.app">
+  <img src="assets/banner.svg" alt="Vantage — live wallpapers for Mac and Windows. Your desktop, alive." width="100%" />
+</a>
+
+<p>
+  <b>Free, open-source live wallpapers.</b> 1,300+ motion wallpapers, procedural GPU scenes, every display — without slowing your machine down.
+</p>
+
+<p>
+  <a href="https://github.com/satiricalguru/Vantage/releases/latest"><img src="https://img.shields.io/github/v/release/satiricalguru/Vantage?style=flat-square&label=release&color=111214" alt="Latest release" /></a>
+  <a href="https://github.com/satiricalguru/Vantage/releases"><img src="https://img.shields.io/github/downloads/satiricalguru/Vantage/total?style=flat-square&color=111214" alt="Total downloads" /></a>
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20(beta)-111214?style=flat-square" alt="Platforms: macOS and Windows (beta)" />
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/satiricalguru/Vantage?style=flat-square&color=111214" alt="MIT license" /></a>
+  <a href="https://github.com/satiricalguru/Vantage/stargazers"><img src="https://img.shields.io/github/stars/satiricalguru/Vantage?style=flat-square&color=111214" alt="GitHub stars" /></a>
+</p>
+
+<p>
+  <a href="https://vantage-five-navy.vercel.app"><b>Website</b></a> ·
+  <a href="https://github.com/satiricalguru/Vantage/releases/latest"><b>Download</b></a> ·
+  <a href="#-features">Features</a> ·
+  <a href="#-generative-wallpapers">Generative</a> ·
+  <a href="#%EF%B8%8F-build-from-source">Build</a> ·
+  <a href="#-contributors">Contributors</a>
+</p>
+
+<img src="assets/screenshots/app-discover.jpg" alt="Vantage gallery: Now Playing banner showing the live wallpaper, sidebar with displays and categories, and a grid of wallpapers" width="100%" />
+
 </div>
 
 ---
 
-## ✨ Key Features
+## ✨ Why Vantage
 
-### 🖥️ Native Multi-Monitor Management
-- **Independent Display Control**: Assign unique live wallpapers to each connected monitor or span wallpapers across your workspace.
-- **Hot-Plug Awareness**: Automatically detects display connections, disconnections, and resolution changes, preserving wallpaper assignments instantly.
+- 🖥️ **Every display, its own world** — assign a different wallpaper to each monitor; hot-plug a screen and Vantage picks up where it left off.
+- ⚡ **4K that sips power** — videos stream straight from disk with HTTP range requests, and Vantage drops to battery-saver cadence the moment you unplug.
+- 🌌 **Generative scenes** — 8 GPU shader wallpapers render live and react to your cursor. Nothing to download, and they never loop.
+- 📂 **Bring your own** — import MP4, MOV, WebM, PNG, JPG or WebP, or drop files into a watched folder and they appear instantly.
+- 🎛️ **Out of your way** — lives in the menu bar and the Dock (hide the Dock icon any time), pause or swap from the tray, ⌘K to search 1,300+ wallpapers.
+- 🔓 **Free & open source** — MIT licensed, no account, no tracking.
 
-### ⚡ Zero-Lag Hardware Accelerated Streaming
-- **Custom `media://` Protocol**: Bypasses browser memory limits by implementing custom HTTP 206 Partial Content (Range Request) streaming directly from disk.
-- **4K/60FPS Smooth Playback**: Plays heavy H.264/HEVC videos and WebM loops with near-zero memory footprint and smooth hardware acceleration.
+<div align="center">
+  <img src="assets/media/app-tour.gif" alt="Animated tour: hovering wallpaper tiles plays previews, opening a detail view, browsing with arrow keys, then switching to Generative scenes" width="90%" />
+</div>
 
-### 🔒 Native macOS Screen Saver
-- **True Screen Saver module**: Vantage builds a native universal `.saver` companion using Apple’s `ScreenSaverView` and AVFoundation APIs.
-- **Live video playback**: The companion reads the selected local video and loops it natively inside macOS Screen Saver.
-- **Lock Screen behavior**: macOS owns the authenticated login layer. Vantage pauses its Electron desktop wallpaper while locked; the native Screen Saver is the supported path for live content before password unlock.
-- **Setup**: Open Preferences → Install & Activate. Vantage installs and activates itself as the current user’s Screen Saver, then opens System Settings → Wallpaper. Test the Screen Saver first; an immediate authenticated Lock Screen can show the system wallpaper until the Screen Saver is active.
+## 📸 Features
 
-### 🔋 Battery & Energy Saver Intelligence
-- **Battery Saver Mode**: Automatically reduces canvas cadence and video playback speed when running on battery power to conserve energy.
+<table>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/app-generative.jpg" alt="Generative category with live shader previews: Aurora Veil, Ink Nebula, Iris Bloom, Lava Lamp, Liquid Chrome" /></td>
+    <td width="50%"><img src="assets/screenshots/app-detail.jpg" alt="Detail view of Blue Moonlight Lake with 4K resolution, loop length, source, license, and per-display Set buttons" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Generative canvases</b><br /><sub>Procedural scenes rendered on your GPU, previewed live in the grid.</sub></td>
+    <td align="center"><b>Detail &amp; apply</b><br /><sub>Streaming preview, source and license, set per display. ← → to browse.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/desktop-iris-bloom.jpg" alt="Iris Bloom shader running as the actual desktop wallpaper" /></td>
+    <td width="50%"><img src="assets/screenshots/app-preferences.jpg" alt="Preferences: launch at login, show in Dock, lock screen saver, per-display energy modes, cache storage" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>On your actual desktop</b><br /><sub>Iris Bloom running live behind your icons.</sub></td>
+    <td align="center"><b>Preferences</b><br /><sub>Energy mode per display, Dock &amp; login options, cache control.</sub></td>
+  </tr>
+</table>
 
+<details>
+<summary><b>Everything Vantage does</b></summary>
 
-### 🌌 AI & Generative Live Canvas
-- **Generative Particle Engine**: Real-time customizable particle systems with dynamic light fields and interactive cursor responses.
-- **AI Still Animation**: Transforms static high-res wallpapers into lively atmospheric motion scenes with depth parallax and subtle ambient movement.
-- **Configurable Render Cadence**: Choose Quality, Balanced, or Battery Saver behavior per display.
+| | |
+|:--|:--|
+| **Library** | 1,330 wallpapers across Anime, Gaming, Heroes &amp; Comics, Nature, Space, Cars &amp; Streets, Digital Art, Generative and your own Still Images |
+| **Gallery** | Now Playing banner with Shuffle, live display cards, category counts, ⌘K search, sort by featured / A–Z / resolution, two grid densities, hover-to-preview, one-click **Set**, favorites |
+| **Multi-monitor** | Independent wallpaper and energy mode per display, apply to all, hot-plug aware |
+| **Energy** | Quality (60 fps), Balanced (30 fps), Battery (15 fps); shaders also lower their render resolution; automatic battery-saver when unplugged |
+| **Streaming** | Custom `media://` protocol with HTTP 206 range requests; downloaded wallpapers cached on disk with a configurable limit |
+| **Imports** | File picker (⌘O) or the watched `~/Pictures/Vantage Wallpapers/` folder (videos) and its `Static/` subfolder (images) |
+| **macOS** | Desktop-level windows behind your icons, menu bar + Dock (toggle the Dock icon from the menu bar), native Screen Saver companion for the Lock Screen |
+| **Windows (beta)** | Wallpaper attached behind desktop icons via WorkerW, tray menu, NSIS installer |
 
-### 📂 Automatic Local Folder Watcher & Import
-- **Instant Folder Import**: Simply drop `.mp4`, `.mov`, `.webm`, `.png`, `.jpg`, or `.webp` files into `~/Pictures/Vantage Wallpapers/`.
-- **Drag-and-Drop Ingestion**: Import custom wallpapers straight from the gallery UI with instant preview generation.
+</details>
 
-### 🎛️ Mac-Native Dark Glass UI & Tray
-- **Menu Bar Tray Application**: Control playback, change wallpapers, or tweak settings quickly from the macOS menu bar tray.
-- **macOS Vibrancy & Glassmorphism**: Features macOS native `sidebar` vibrancy effects, sleek typography, and fluid Framer Motion animations.
-- **Dock Hiding Option**: Run silently in the background as a menubar utility without cluttering your macOS Dock.
+## 🌌 Generative wallpapers
 
----
+Rendered in real time by GLSL shaders (`src/renderer/shared/shaders.ts`). They follow your cursor and scale their resolution with the energy mode.
 
-## 💻 Supported Mac Displays & Resolutions
+| | | | |
+|:--:|:--:|:--:|:--:|
+| **Iris Bloom** | **Liquid Chrome** | **Silk Waves** | **Neon Horizon** |
+| Aperture kaleidoscope | Domain-warped metal | Layered pastel bands | Synthwave sun &amp; grid |
+| **Ink Nebula** | **Warp Drive** | **Aurora Veil** | **Lava Lamp** |
+| Drifting clouds &amp; stars | Light-speed streaks | Northern lights | Metaballs that chase the cursor |
 
-Vantage natively scales and adapts live wallpapers across all Apple Silicon (M1/M2/M3/M4/M5) and Intel Mac displays up to 4K/6K Retina resolutions:
+Plus three classic canvas scenes: **Quantum Field**, **Aurora Flow** and **Nebula Drift**.
 
-### 💻 MacBook Air
-| Model | Screen | Native Resolution |
-| :--- | :---: | :---: |
-| **MacBook Air 11"** (2010–2015) | 11.6" | `1366 × 768` |
-| **MacBook Air 13"** (2010–2017) | 13.3" | `1440 × 900` |
-| **MacBook Air 13" Retina** (2018–2020) | 13.3" | `2560 × 1600` |
-| **MacBook Air M1 13"** (2020) | 13.3" | `2560 × 1600` |
-| **MacBook Air M2 13.6"** (2022–2024) | 13.6" | `2560 × 1664` |
-| **MacBook Air M3 13.6"** | 13.6" | `2560 × 1664` |
-| **MacBook Air M4 13.6"** | 13.6" | `2560 × 1664` |
-| **MacBook Air M2/M3/M4 15.3"** | 15.3" | `2880 × 1864` |
+<div align="center">
+  <img src="assets/screenshots/desktop-neon-horizon.jpg" alt="Neon Horizon synthwave shader running as the desktop wallpaper" width="80%" />
+</div>
 
-### 💻 MacBook Pro
-| Model | Screen | Native Resolution |
-| :--- | :---: | :---: |
-| **MacBook Pro 13" non-Retina** | 13.3" | `1280 × 800` |
-| **MacBook Pro 13" Retina** | 13.3" | `2560 × 1600` |
-| **MacBook Pro 13" M1/M2** | 13.3" | `2560 × 1600` |
-| **MacBook Pro 14"** (2021–2024) | 14.2" | `3024 × 1964` |
-| **MacBook Pro 14" M4/M5** | 14.2" | `3024 × 1964` |
-| **MacBook Pro 15"** | 15.4" | `2880 × 1800` |
-| **MacBook Pro 16" Retina** | 16.0" | `3072 × 1920` |
-| **MacBook Pro 16" M1/M2/M3/M4** | 16.2" | `3456 × 2234` |
+## 📥 Download
 
----
+| Platform | Get it | Notes |
+|:--|:--|:--|
+| 🍏 **macOS** (Apple Silicon &amp; Intel) | [Latest release](https://github.com/satiricalguru/Vantage/releases/latest) | Open the `.dmg` and drag Vantage to Applications |
+| 🪟 **Windows 10/11** | Coming soon | Builds are set up in CI; the first Windows release is still to be published |
 
-## 🏛️ Technical Architecture
+> [!NOTE]
+> If macOS says it can't verify the app, don't remove the quarantine flag. Use a release that's Developer ID–signed and notarized, and check its published checksum.
 
-Vantage is built with a dual-process architecture separating the core system service from the visual wallpaper renderers and configuration gallery:
+Or visit **[vantage-five-navy.vercel.app](https://vantage-five-navy.vercel.app)** — the download button picks the right file for your Mac.
 
-```
-                           ┌──────────────────────────┐
-                           │       macOS System       │
-                           └────────────┬─────────────┘
-                                        │
-                  ┌─────────────────────┴─────────────────────┐
-                  │  Electron Main Process (System Service)   │
-                  │                                           │
-                  │ • SQLite Database (better-sqlite3)        │
-                  │ • Custom media:// Stream (HTTP 206 Range) │
-                  │ • Power/Battery & System Observer         │
-                  │ • Display Manager (Multi-Monitor IPC)     │
-                  │ • Menu Bar Tray Handler                   │
-                  └───────┬───────────────────────────┬───────┘
-                          │                           │
-      ┌───────────────────┴──────────┐    ┌───────────┴───────────────────┐
-      │  Wallpaper Renderer Window   │    │       Gallery Window UI       │
-      │    (Behind Desktop Icons)    │    │   (React 18 + Tailwind CSS)   │
-      │                              │    │                               │
-      │ • Video Layer (HTML5 Video)  │    │ • Wallpaper Discovery & Search│
-      │ • AI Particle Canvas Layer   │    │ • Category & Dynamic Filters  │
-      │ • Frameless Desktop Window   │    │ • Multi-Monitor Assignment    │
-      └──────────────────────────────┘    └───────────────────────────────┘
-```
+## 🌐 The website
 
----
+The landing page lives in [`website/`](website/README.md): a Three.js / WebGL scroll experience. A 3D monitor plays a wallpaper, the camera dives into the screen, the Vantage aperture falls through a tunnel lined with real wallpapers, and you land on the download.
 
-## ⚡ Performance & Battery Intelligence
+<div align="center">
+  <a href="https://vantage-five-navy.vercel.app"><img src="assets/media/website-dive.gif" alt="Scrolling through the website's dive: monitor, aperture in the void, text spreading apart, the wallpaper tunnel, and the download scene" width="90%" /></a>
+  <br />
+  <sub><a href="assets/media/website-dive.mp4">Watch in higher quality (MP4)</a></sub>
+</div>
 
-Vantage offers 3 distinct performance tiers to balance visuals with energy efficiency:
+<table>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/website-hero.jpg" alt="Website hero: 'Your desktop, wide awake.' over glossy 3D shapes that scatter from the cursor" /></td>
+    <td width="50%"><img src="assets/screenshots/website-dive-tunnel.jpg" alt="Website dive: the aperture falling through a tunnel of wallpaper panes and light streaks" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/website-library.jpg" alt="Website library section with two velocity-reactive marquees of wallpaper thumbnails" /></td>
+    <td width="50%"><img src="assets/screenshots/website-download.jpg" alt="Website download scene: 'Make it move.' with wallpaper cards orbiting the aperture and macOS / Windows buttons" /></td>
+  </tr>
+</table>
 
-| Performance Mode | Frame Rate | Recommended Use Case |
-| :--- | :--- | :--- |
-| **🚀 Quality** | Up to 60 FPS canvas cadence | Dedicated GPU setups, plugged-in power workstations |
-| **⚖️ Balanced** | Up to 30 FPS canvas cadence | Standard daily usage with lower energy use |
-| **🌱 Battery Saver** | Up to 15 FPS canvas cadence | Maximum canvas energy conservation on MacBook battery |
+## 🛠️ Build from source
 
----
-
-## 🛠️ Tech Stack
-
-| Component | Technology | Description |
-| :--- | :--- | :--- |
-| **Framework** | [Electron 43](https://www.electronjs.org/) | macOS desktop application runtime |
-| **Frontend Framework** | [React 18](https://react.dev/) | Modern component-based UI library |
-| **Language** | [TypeScript 5.7](https://www.typescriptlang.org/) | Type-safe programming language |
-| **Styling & Motion** | [Tailwind CSS](https://tailwindcss.com/) & [Framer Motion](https://www.framer.com/motion/) | Utility-first CSS & fluid animation library |
-| **Build System** | [Vite 7](https://vitejs.dev/) (`electron-vite`) | Lightning-fast module bundler & dev server |
-| **Database** | [SQLite](https://github.com/WiseLibs/better-sqlite3) (`better-sqlite3`) | High-speed local database storage |
-| **Icons** | [Lucide React](https://lucide.dev/) | Beautiful & consistent open-source icon suite |
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- **Operating System**: macOS 12.0 (Monterey) or later (Apple Silicon M1/M2/M3/M4 & Intel x86_64)
-- **Node.js**: `v20.19.0` or higher
-- **Package Manager**: `npm` v9+ or `yarn` / `pnpm`
-
-### Installation
-
-1. Download the latest `.dmg` release for your Mac architecture from [Releases](https://github.com/satiricalguru/Vantage/releases):
-   - 🍏 **Apple Silicon (M1/M2/M3/M4):** `Vantage-1.0.0-arm64.dmg`
-   - 💻 **Intel (x86_64):** `Vantage-1.0.0-x64.dmg`
-2. Open the downloaded `.dmg` file and drag **Vantage** into your `Applications` folder.
-3. If macOS reports that it cannot verify the app, **do not bypass Gatekeeper by removing quarantine**. Download a release that is Developer ID-signed and notarized, and verify its published checksum before installation.
-4. Launch Vantage from your Applications folder and enjoy live wallpapers!
-
----
-
-## 🛠️ Building from Source
-
-To build and run Vantage locally on your machine:
+**Requirements:** Node.js 20.19+ and npm. Building the macOS Screen Saver companion needs Xcode command-line tools.
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/satiricalguru/Vantage.git
 cd Vantage
-
-# 2. Install dependencies
 npm install
-
-# 3. Start the development server
 npm run dev
-
-# 4. Package the application for testing
-npm run pack
-
-# 5. Build production macOS DMG bundle
-npm run dist
 ```
 
----
+<details>
+<summary><b>All scripts</b></summary>
 
-## 📂 Folder Structure
+| Command | What it does |
+|:--|:--|
+| `npm run dev` | Run the app with hot reload |
+| `npm run typecheck` | TypeScript check across main, preload and renderer |
+| `npm run preview:ui` | Preview the gallery UI in a browser with a mocked API — no Electron needed (`http://localhost:5181/gallery.html`) |
+| `npm run audit:catalog` | Report category mistakes, duplicates and missing files in the wallpaper catalog (`--write` fixes, `--links` checks every URL) |
+| `npm run dist:mac` | Build `.dmg` + `.zip` for Apple Silicon and Intel |
+| `npm run dist:win` | Build the NSIS installer for Windows x64 / arm64 (run on Windows or CI) |
+| `npm --prefix website run dev` | Run the website locally |
+
+Pushing a `v*` tag runs [`.github/workflows/release.yml`](.github/workflows/release.yml), which builds macOS and Windows installers and attaches them to a draft release.
+
+</details>
+
+## 🏛️ How it works
+
+```mermaid
+flowchart LR
+  subgraph Main["Electron main process"]
+    DB[(SQLite catalog)]
+    MP["media:// range streaming"]
+    PW[Power &amp; display observer]
+    TR[Tray &amp; Dock]
+  end
+  subgraph Wall["Wallpaper window — behind desktop icons"]
+    V[Video layer]
+    S[GPU shader layer]
+    C[Canvas layer]
+  end
+  subgraph Gal["Gallery window — React + Tailwind"]
+    G[Browse · search · apply]
+  end
+  Gal -- IPC --> Main
+  Main -- wallpaper / energy events --> Wall
+  MP --> V
+```
+
+<details>
+<summary><b>Tech stack &amp; folder structure</b></summary>
+
+**Stack:** Electron 43 · React 18 · TypeScript · Tailwind CSS · Vite (`electron-vite`) · better-sqlite3 · Lucide icons · koffi (Windows desktop attach) · Three.js + Lenis (website)
 
 ```
 Vantage/
-├── assets/                  # App branding assets & SVG icons
-├── resources/               # Tray icons & built-in wallpaper thumbnails
 ├── src/
-│   ├── main/                # Electron main process (DB, IPC, Tray, Power Manager)
-│   │   ├── index.ts         # Application entrypoint & protocol registration
-│   │   ├── db.ts            # SQLite database initialization & query helpers
-│   │   ├── powerManager.ts  # Battery status & low power mode observer
-│   │   ├── tray.ts          # macOS native menu bar tray setup
-│   │   └── wallpaperWindow.ts # Window creation & desktop attachment hooks
-│   ├── preload/             # Electron preload scripts & context bridges
-│   └── renderer/            # React renderer application
-│       ├── gallery/         # Main gallery window (Discovery, Settings, Detail)
-│       └── wallpaper/       # Wallpaper layer renderers (Video, Generative, AI Still)
-├── electron.vite.config.ts  # Vite build configuration
-├── tailwind.config.js       # Tailwind CSS design system tokens
-└── package.json             # Dependencies and build scripts
+│   ├── main/            # Electron main: DB, IPC, tray, dock, power, wallpaper windows
+│   │   └── platform/    # Windows desktop attach (WorkerW)
+│   ├── preload/         # Context bridges
+│   └── renderer/
+│       ├── gallery/     # Gallery UI (screens, components, store)
+│       ├── wallpaper/   # Video, shader and canvas wallpaper layers
+│       └── shared/      # GLSL shader library
+├── resources/           # Catalog, bundled wallpapers, thumbnails, icons
+├── native/              # macOS Screen Saver companion (Swift)
+├── scripts/             # Icon, screen saver and catalog tooling
+└── website/             # Landing page (Vite + Three.js)
 ```
 
----
+</details>
+
+## 🗺️ Roadmap
+
+- [x] Redesigned gallery with Now Playing, Shuffle and ⌘K search
+- [x] GPU shader wallpapers
+- [x] Catalog audit and recategorization
+- [x] Landing page with download links that resolve the latest release
+- [ ] First published Windows release
+- [ ] Developer ID signing and notarization for macOS
+- [ ] Playlists and timed rotation
+- [ ] More procedural scenes
+
+## 🤝 Contributors
+
+<table>
+  <tr>
+    <td align="center" width="140">
+      <a href="https://github.com/satiricalguru"><img src="https://github.com/satiricalguru.png?size=120" width="72" alt="satiricalguru" style="border-radius:50%" /><br /><sub><b>satiricalguru</b></sub></a><br /><sub>Creator &amp; maintainer</sub>
+    </td>
+    <td align="center" width="140">
+      <a href="https://github.com/Mxhi-04"><img src="https://github.com/Mxhi-04.png?size=120" width="72" alt="Mxhi-04" style="border-radius:50%" /><br /><sub><b>Mahi Patni</b></sub></a><br /><sub><a href="https://github.com/Mxhi-04">@Mxhi-04</a></sub>
+    </td>
+  </tr>
+</table>
+
+Contributions are welcome — open an [issue](https://github.com/satiricalguru/Vantage/issues) or a pull request. Run `npm run typecheck` before submitting.
+
+## 🙏 Acknowledgements
+
+- Most of the streamed video catalog comes from [MotionBGS](https://motionbgs.com). Wallpaper artwork belongs to its original creators and rights holders.
+- Built with [Electron](https://www.electronjs.org/), [React](https://react.dev/), [Tailwind CSS](https://tailwindcss.com/), [Three.js](https://threejs.org/) and [Lenis](https://lenis.darkroom.engineering/).
 
 ## 📄 License
 
-Distributed under the MIT License. See [`LICENSE`](LICENSE) for more details.
+[MIT](LICENSE) © 2026 Vantage Team
 
 <div align="center">
-  <sub>Built with ❤️ for macOS power users by the Vantage Team.</sub>
+  <br />
+  <sub>If Vantage made your desktop a little more alive, consider giving it a ⭐ · <a href="#top">Back to top ↑</a></sub>
 </div>
