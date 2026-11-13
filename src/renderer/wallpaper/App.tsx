@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { VideoLayer } from './VideoLayer'
 import { GenerativeLayer } from './GenerativeLayer'
 import { AiStillLayer } from './AiStillLayer'
+import { ShaderLayer } from './ShaderLayer'
+import { isShaderGenerator } from '../shared/shaders'
 import type { WallpaperItem } from '../../shared/types'
 
 export const App: React.FC = () => {
@@ -11,6 +13,10 @@ export const App: React.FC = () => {
   const downloadUrlRef = useRef<string>('')
   const [performanceMode, setPerformanceMode] = useState<string>('balanced')
   const [isPlaying, setIsPlaying] = useState<boolean>(true)
+  const [shaderFailed, setShaderFailed] = useState(false)
+  const onShaderUnsupported = useCallback(() => setShaderFailed(true), [])
+  // A failure is per generator: give the next shader wallpaper a fresh chance.
+  useEffect(() => setShaderFailed(false), [wallpaper?.generatorId])
 
   // Monotonic apply token: async playback resolution is only honored if no
   // newer apply happened in the meantime (prevents a slow download for
@@ -143,6 +149,17 @@ export const App: React.FC = () => {
           </div>
         )}
       </div>
+    )
+  }
+
+  if (wallpaper.type === 'generative' && isShaderGenerator(wallpaper.generatorId) && !shaderFailed) {
+    return (
+      <ShaderLayer
+        generatorId={wallpaper.generatorId!}
+        isPlaying={isPlaying}
+        performanceMode={performanceMode}
+        onUnsupported={onShaderUnsupported}
+      />
     )
   }
 
