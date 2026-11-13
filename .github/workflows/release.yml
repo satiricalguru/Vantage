@@ -44,7 +44,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # --ignore-scripts: better-sqlite3 and koffi ship N-API prebuilds, so skip npm's
+      # implicit node-gyp rebuild (it breaks on new Python/Visual Studio runners).
+      - run: npm ci --ignore-scripts
       - run: npm run typecheck
       - run: npm run ${{ matrix.script }} -- --publish always
         env:
