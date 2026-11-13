@@ -16,19 +16,19 @@
     "build:screen-saver": "node scripts/build-screen-saver.mjs",
     "postinstall": "electron-builder install-app-deps",
     "pack": "npm run build && electron-builder --dir",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build && electron-builder",
+    "preview:ui": "vite --config vite.ui-preview.config.ts --mode ui-preview",
+    "audit:catalog": "node scripts/audit-catalog.mjs",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win"
   },
   "dependencies": {
-    "@electron-toolkit/utils": "^3.0.0",
-    "better-sqlite3": "^13.0.3",
-    "clsx": "^2.1.1",
+    "better-sqlite3": "^13.1.1",
     "electron-store": "^8.2.0",
-    "framer-motion": "^11.18.2",
     "lucide-react": "^0.474.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.6.0",
-    "zustand": "^5.0.3"
+    "zustand": "^5.1.0"
   },
   "devDependencies": {
     "@electron-toolkit/preload": "^3.0.1",
@@ -38,14 +38,14 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
-    "autoprefixer": "^10.4.20",
-    "electron": "43.3.0",
-    "electron-builder": "^26.15.3",
+    "autoprefixer": "^10.6.2",
+    "electron": "^43.8.10",
+    "electron-builder": "^25.1.0",
     "electron-vite": "^5.0.0",
-    "postcss": "^8.5.1",
+    "postcss": "^8.5.32",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
-    "vite": "^7.2.2"
+    "vite": "^7.3.8"
   },
   "build": {
     "appId": "com.vantage.app",
@@ -73,9 +73,13 @@
           ]
         }
       ],
-      "extendInfo": {
-        "LSUIElement": true
-      }
+      "extraResources": [
+        {
+          "from": "build/screen-saver/Vantage.saver",
+          "to": "Vantage.saver"
+        }
+      ],
+      "artifactName": "Vantage-${version}-${arch}.${ext}"
     },
     "files": [
       "out/**/*",
@@ -100,14 +104,52 @@
       {
         "from": "resources/wallpapers",
         "to": "resources/wallpapers"
-      },
-      {
-        "from": "build/screen-saver/Vantage.saver",
-        "to": "Vantage.saver"
       }
     ],
     "directories": {
       "output": "dist"
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "artifactName": "Vantage-Setup-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "runAfterFinish": true
+    },
+    "asarUnpack": [
+      "node_modules/koffi/**"
+    ],
+    "compression": "maximum",
+    "publish": {
+      "provider": "github",
+      "owner": "satiricalguru",
+      "repo": "Vantage",
+      "releaseType": "draft"
     }
+  },
+  "allowScripts": {
+    "better-sqlite3@13.1.1": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.3": true,
+    "electron-winstaller@5.4.0": true,
+    "electron@43.3.0": true,
+    "koffi@2.16.3": true
+  },
+  "optionalDependencies": {
+    "koffi": "^2.16.3"
   }
 }

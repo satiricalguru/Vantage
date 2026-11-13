@@ -4,6 +4,7 @@ import type { AppSettings, DisplayInfo } from '../shared/types'
 contextBridge.exposeInMainWorld('galleryApi', {
   getWallpapers: (category?: string, query?: string) =>
     ipcRenderer.invoke('wallpaper:list', { category, query }),
+  getCategoryCounts: () => ipcRenderer.invoke('wallpaper:counts'),
   applyToDisplay: (displayId: number, wallpaperId: string) =>
     ipcRenderer.invoke('wallpaper:apply-to-display', { displayId, wallpaperId }),
   toggleFavorite: (wallpaperId: string, isFavorite: boolean) =>
@@ -34,6 +35,11 @@ contextBridge.exposeInMainWorld('galleryApi', {
     const handler = () => callback()
     ipcRenderer.on('catalog:changed', handler)
     return () => ipcRenderer.removeListener('catalog:changed', handler)
+  },
+  onNavigate: (callback: (screen: string) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, screen: string) => callback(screen)
+    ipcRenderer.on('navigate', handler)
+    return () => ipcRenderer.removeListener('navigate', handler)
   },
   minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
   closeWindow: () => ipcRenderer.invoke('window:close')

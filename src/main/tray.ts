@@ -9,6 +9,7 @@ import {
 } from './wallpaperWindow'
 import { freeUpMemory } from './memoryManager'
 import store from './store'
+import { isDockVisible, setDockVisible } from './dock'
 
 let tray: Tray | null = null
 let currentOnOpenGallery: (() => void) | null = null
@@ -92,6 +93,16 @@ export function updateTrayMenu(): void {
         }
       }
     },
+    ...(process.platform === 'darwin'
+      ? [
+          {
+            label: 'Show in Dock',
+            type: 'checkbox' as const,
+            checked: isDockVisible(),
+            click: (menuItem: Electron.MenuItem) => setDockVisible(menuItem.checked)
+          }
+        ]
+      : []),
     { type: 'separator' },
     {
       label: 'Quit Vantage',
@@ -112,16 +123,20 @@ export function createTray(onOpenGallery: () => void): Tray {
   currentOnOpenGallery = onOpenGallery
 
   // Resolve icon path safely for both dev mode and packaged app
-  let iconPath = path.join(__dirname, '../../resources/icons/trayTemplate.png')
+  // macOS uses a monochrome template glyph; Windows/Linux trays need the colour icon.
+  const isMac = process.platform === 'darwin'
+  const iconName = isMac ? 'trayTemplate.png' : 'icon.png'
+  let iconPath = path.join(__dirname, '../../resources/icons', iconName)
   if (!fs.existsSync(iconPath)) {
-    iconPath = path.join(app.getAppPath(), 'resources/icons/trayTemplate.png')
+    iconPath = path.join(app.getAppPath(), 'resources/icons', iconName)
   }
 
   let icon = nativeImage.createFromPath(iconPath)
   if (icon.isEmpty()) {
     console.warn('[Tray] Icon empty at path:', iconPath)
   }
-  icon.setTemplateImage(true)
+  if (isMac) icon.setTemplateImage(true)
+  else icon = icon.resize({ width: 32, height: 32, quality: 'best' })
 
   tray = new Tray(icon)
   tray.setToolTip('Vantage — Live Wallpaper Manager')

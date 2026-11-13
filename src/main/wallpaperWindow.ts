@@ -2,6 +2,9 @@ import { BrowserWindow, screen, Display, WebContents } from 'electron'
 import path from 'node:path'
 import { getDisplayAssignment, getWallpaperById, setPerformanceMode } from './db'
 import { hardenWindowNavigation } from './windowSecurity'
+import { attachToDesktop } from './platform/windowsDesktop'
+
+const isWindows = process.platform === 'win32'
 
 const wallpaperWindows = new Map<number, BrowserWindow>()
 let isGlobalPlaying = true
@@ -19,7 +22,9 @@ export function createWallpaperWindow(display: Display): BrowserWindow {
     y: display.bounds.y,
     width: display.bounds.width,
     height: display.bounds.height,
-    type: 'desktop',
+    // `desktop` windows exist on macOS/Linux; on Windows we re-parent into WorkerW below.
+    ...(isWindows ? {} : { type: 'desktop' as const }),
+    show: false,
     frame: false,
     transparent: false,
     backgroundColor: '#000000',
@@ -50,13 +55,20 @@ export function createWallpaperWindow(display: Display): BrowserWindow {
   })
 
   win.setIgnoreMouseEvents(true, { forward: true })
-  win.setVisibleOnAllWorkspaces(true, {
-    visibleOnFullScreen: true,
-    skipTransformProcessType: true
-  })
+  if (!isWindows) {
+    win.setVisibleOnAllWorkspaces(true, {
+      visibleOnFullScreen: true,
+      skipTransformProcessType: true
+    })
+  }
 
   hardenWindowNavigation(win, wallpaperRendererUrlFor(display.id))
   win.loadURL(wallpaperRendererUrlFor(display.id))
+  if (isWindows && !attachToDesktop(win, display.bounds, display.scaleFactor)) {
+    // Fallback: keep the window non-focusable and pushed behind other windows.
+    win.setAlwaysOnTop(false)
+    win.on('focus', () => win.blur())
+  }
   win.showInactive()
 
   wallpaperWindows.set(display.id, win)
@@ -86,16 +98,20 @@ export function syncWallpaperWindows(): void {
     } else {
       const win = wallpaperWindows.get(display.id)
       if (win && !win.isDestroyed()) {
-        win.setBounds({
-          x: display.bounds.x,
-          y: display.bounds.y,
-          width: display.bounds.width,
-          height: display.bounds.height
-        })
-        win.setVisibleOnAllWorkspaces(true, {
-          visibleOnFullScreen: true,
-          skipTransformProcessType: true
-        })
+        if (isWindows) {
+          attachToDesktop(win, display.bounds, display.scaleFactor)
+        } else {
+          win.setBounds({
+            x: display.bounds.x,
+            y: display.bounds.y,
+            width: display.bounds.width,
+            height: display.bounds.height
+          })
+          win.setVisibleOnAllWorkspaces(true, {
+            visibleOnFullScreen: true,
+            skipTransformProcessType: true
+          })
+        }
       }
     }
   }

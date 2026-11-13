@@ -4,6 +4,7 @@ declare global {
   interface Window {
     galleryApi?: {
       getWallpapers: (category?: string, query?: string) => Promise<WallpaperItem[]>
+      getCategoryCounts: () => Promise<Record<string, number>>
       applyToDisplay: (displayId: number, wallpaperId: string) => Promise<boolean>
       toggleFavorite: (wallpaperId: string, isFavorite: boolean) => Promise<boolean>
       deleteWallpaper: (wallpaperId: string) => Promise<boolean>
@@ -22,6 +23,7 @@ declare global {
       openExternal: (url: string) => void
       onDisplayChanged: (callback: (displays: DisplayInfo[]) => void) => () => void
       onCatalogChanged: (callback: () => void) => () => void
+      onNavigate?: (callback: (screen: string) => void) => () => void
       minimizeWindow: () => Promise<void>
       closeWindow: () => Promise<void>
     }

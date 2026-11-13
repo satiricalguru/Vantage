@@ -255,6 +255,24 @@ export function getWallpaperFileReferences(): string[] {
   return Array.from(names)
 }
 
+/** Item counts per sidebar category (plus the virtual "all", "favorites" and "static" buckets). */
+export function getCategoryCounts(): Record<string, number> {
+  const database = initDatabase()
+  const counts: Record<string, number> = {}
+  const rows = database
+    .prepare("SELECT category, COUNT(*) AS n FROM wallpapers WHERE source != 'static' GROUP BY category")
+    .all() as { category: string; n: number }[]
+  let all = 0
+  for (const row of rows) {
+    counts[row.category] = row.n
+    all += row.n
+  }
+  counts.all = all
+  counts.favorites = (database.prepare("SELECT COUNT(*) AS n FROM wallpapers WHERE is_favorite = 1 AND source != 'static'").get() as { n: number }).n
+  counts.static = (database.prepare("SELECT COUNT(*) AS n FROM wallpapers WHERE source = 'static'").get() as { n: number }).n
+  return counts
+}
+
 export function getAllWallpapers(category?: string, query?: string): WallpaperItem[] {
   const database = initDatabase()
   let sql = 'SELECT * FROM wallpapers'

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useGalleryStore } from '../store/useGalleryStore'
 import type { AppSettings, CacheStatus } from '../../../shared/types'
 import { Zap, HardDrive, RefreshCw, AppWindow, Monitor } from 'lucide-react'
+import { SectionCard, Row, Toggle } from '../components/ui'
 
 export const Settings: React.FC = () => {
   const { displays, fetchDisplays } = useGalleryStore()
@@ -132,205 +133,123 @@ const handleSaveSettings = async (partial: Partial<AppSettings>) => {
     }
   }
 
+  const isMac = navigator.userAgent.includes('Mac')
+  const usedMb = cacheStatus ? cacheStatus.usedBytes / (1024 * 1024) : 0
+  const limitGb = cacheStatus ? cacheStatus.limitBytes / (1024 * 1024 * 1024) : settings.maxCacheSizeGb
+  const usedPct = cacheStatus ? Math.min(100, (cacheStatus.usedBytes / cacheStatus.limitBytes) * 100) : 0
+  const MODES: { id: string; label: string; hint: string }[] = [
+    { id: 'quality', label: 'Quality', hint: '60 fps, full detail' },
+    { id: 'balanced', label: 'Balanced', hint: '30 fps procedural' },
+    { id: 'battery-saver', label: 'Battery', hint: '15 fps, lower res' }
+  ]
+
   return (
-    <div className="p-6 pt-8 max-w-4xl mx-auto space-y-8 animate-fade-in overflow-y-auto h-full">
-      <div className="[-webkit-app-region:drag]">
-        <h1 className="text-2xl font-bold text-ink mb-1">Preferences & System Settings</h1>
-        <p className="text-sm text-ink-dim">
-          Configure frame rates, background energy optimization, dock visibility, and cache limits.
-        </p>
-      </div>
-
-      {/* General Options */}
-      <section className="bg-panel border border-line rounded-xl p-5 space-y-4">
-        <div className="flex items-center gap-2 text-glow font-mono text-xs uppercase tracking-wider">
-          <AppWindow className="w-4 h-4" />
-          <span>System & Window Behavior</span>
+    <div className="h-full overflow-y-auto">
+      <div className={`mx-auto max-w-3xl space-y-5 px-8 pb-12 animate-rise ${isMac ? 'pt-12' : 'pt-8'}`}>
+        <div className="[-webkit-app-region:drag]">
+          <h1 className="text-[24px] font-semibold tracking-tight text-ink">Preferences</h1>
+          <p className="mt-1 text-[13px] text-ink-dim">Startup, energy and storage. Changes save automatically.</p>
         </div>
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-void border border-line rounded-lg">
-            <div>
-              <div className="text-sm font-semibold text-ink">Launch at Login</div>
-              <div className="text-xs text-ink-dim">
-                Automatically launch Vantage in the background when you log into macOS.
-              </div>
-            </div>
-            <input
-              type="checkbox"
-              checked={settings.openAtLogin}
-              onChange={(e) => handleSaveSettings({ openAtLogin: e.target.checked })}
-              className="w-4 h-4 accent-glow cursor-pointer"
-            />
-          </div>
-
-          <div className="flex items-center justify-between p-3 bg-void border border-line rounded-lg">
-            <div>
-              <div className="text-sm font-semibold text-ink">Show in macOS Dock</div>
-              <div className="text-xs text-ink-dim">
-                When enabled, Vantage will appear in the macOS Dock in addition to the Menu Bar.
-              </div>
-            </div>
-            <input
-              type="checkbox"
-              checked={settings.showInDock}
-              onChange={(e) => handleSaveSettings({ showInDock: e.target.checked })}
-              className="w-4 h-4 accent-glow cursor-pointer"
-            />
-          </div>
-
-          <div className="flex items-center justify-between gap-4 p-3 bg-void border border-line rounded-lg">
-            <div>
-              <div className="text-sm font-semibold text-ink">macOS Lock Screen & Screen Saver</div>
-              <div className="text-xs text-ink-dim">
-                Vantage automatically syncs your wallpaper's thumbnail image as the macOS system background for your Lock Screen. Install the native Screen Saver below to play your live video wallpaper on the Lock Screen.
-              </div>
-            </div>
-            <button
-              onClick={handleSetupScreenSaver}
-              disabled={screenSaverBusy}
-              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded bg-glow/10 border border-glow/30 text-xs font-mono text-glow hover:bg-glow/20 disabled:opacity-50 transition"
-            >
-              <Monitor className="w-3.5 h-3.5" />
-              <span>{screenSaverBusy ? 'Activating…' : 'Install & Activate'}</span>
-            </button>
-          </div>
-
-          {screenSaverMessage && (
-            <div className="text-xs font-mono text-glow bg-glow/10 border border-glow/20 rounded p-2">
-              {screenSaverMessage}
-            </div>
+        <SectionCard icon={AppWindow} title="General" subtitle="How Vantage starts and where it lives">
+          <Row title="Launch at login" description="Start Vantage quietly in the background when you sign in.">
+            <Toggle label="Launch at login" checked={settings.openAtLogin} onChange={(v) => handleSaveSettings({ openAtLogin: v })} />
+          </Row>
+          {isMac && (
+            <Row title="Show in Dock" description="Vantage always lives in the menu bar. Turn this on to also show it in the Dock.">
+              <Toggle label="Show in Dock" checked={settings.showInDock} onChange={(v) => handleSaveSettings({ showInDock: v })} />
+            </Row>
           )}
-
-          <div className="flex items-center justify-between p-3 bg-void border border-line rounded-lg">
-            <div>
-              <div className="text-sm font-semibold text-ink">Close to Background</div>
-              <div className="text-xs text-ink-dim">
-                Clicking the red close button (X) hides the gallery to the background while wallpapers keep playing.
-              </div>
-            </div>
-            <span className="text-xs font-mono text-glow px-2 py-0.5 rounded bg-glow/10 border border-glow/20">
-              Enabled (Wallpaper X Behavior)
-            </span>
-          </div>
-        </div>
-      </section>
-
-
-      {/* Performance & Energy Modes */}
-      <section className="bg-panel border border-line rounded-xl p-5 space-y-4">
-        <div className="flex items-center gap-2 text-glow font-mono text-xs uppercase tracking-wider">
-          <Zap className="w-4 h-4" />
-          <span>Per-Display Performance Controls</span>
-        </div>
-
-        <div className="space-y-4">
-          {displays.map((disp) => (
-            <div
-              key={disp.id}
-              className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-void border border-line rounded-lg gap-3"
+          <Row title="Close keeps playing" description="Closing this window hides it — wallpapers keep running until you quit from the menu bar.">
+            <span className="rounded-full bg-glow/10 px-2.5 py-1 text-[11px] font-medium text-glow">Always on</span>
+          </Row>
+          {isMac && (
+            <Row
+              title="Lock Screen & Screen Saver"
+              description="Installs the native Vantage screen saver so your live wallpaper plays before you unlock. Test it from System Settings before relying on it."
             >
+              <button onClick={handleSetupScreenSaver} disabled={screenSaverBusy} className="btn-ghost">
+                <Monitor className="h-4 w-4" />
+                {screenSaverBusy ? 'Installing…' : 'Install & activate'}
+              </button>
+            </Row>
+          )}
+          {screenSaverMessage && <div className="bg-glow/[0.06] px-4 py-3 text-[12px] text-glow">{screenSaverMessage}</div>}
+        </SectionCard>
+
+        <SectionCard icon={Zap} title="Energy" subtitle="Frame rate and render resolution per display">
+          {displays.length === 0 && <Row title="No displays detected" />}
+          {displays.map((disp) => (
+            <div key={disp.id} className="flex flex-wrap items-center justify-between gap-4 px-4 py-3.5">
               <div>
-                <div className="font-semibold text-sm text-ink">{disp.label}</div>
-                <div className="text-xs font-mono text-ink-dim">
-                  Resolution: {Math.round(disp.bounds.width * (disp.scaleFactor || 1))}×{Math.round(disp.bounds.height * (disp.scaleFactor || 1))}
-                  {disp.scaleFactor && disp.scaleFactor > 1 ? ` (${disp.bounds.width}×${disp.bounds.height} @ ${disp.scaleFactor}x Retina)` : ''}
+                <div className="text-[13px] font-medium text-ink">{disp.label}</div>
+                <div className="mt-0.5 font-mono text-[11px] text-ink-faint">
+                  {Math.round(disp.bounds.width * (disp.scaleFactor || 1))} × {Math.round(disp.bounds.height * (disp.scaleFactor || 1))}
+                  {disp.scaleFactor && disp.scaleFactor > 1 ? ` · ${disp.scaleFactor}× Retina` : ''}
                 </div>
               </div>
-
-              <div className="flex items-center gap-2">
-                {['quality', 'balanced', 'battery-saver'].map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => handlePerformanceChange(disp.id, mode)}
-                    className={`px-3 py-1.5 rounded text-xs font-mono capitalize border transition ${
-                      disp.performanceMode === mode
-                        ? 'bg-glow/10 border-glow/40 text-glow'
-                        : 'bg-panel-hover border-line text-ink-dim hover:text-ink'
-                    }`}
-                  >
-                    {mode.replace('-', ' ')}
-                  </button>
-                ))}
+              <div className="flex rounded-xl bg-white/[0.04] p-1 ring-1 ring-line" role="radiogroup" aria-label={`Performance for ${disp.label}`}>
+                {MODES.map((mode) => {
+                  const on = disp.performanceMode === mode.id
+                  return (
+                    <button
+                      key={mode.id}
+                      role="radio"
+                      aria-checked={on}
+                      title={mode.hint}
+                      onClick={() => handlePerformanceChange(disp.id, mode.id)}
+                      className={`rounded-lg px-3 py-1.5 text-[12px] font-medium transition ${on ? 'bg-glow text-void shadow' : 'text-ink-dim hover:text-ink'}`}
+                    >
+                      {mode.label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           ))}
-        </div>
-      </section>
+          <Row title="On battery" description="Vantage automatically drops to battery-saver cadence when your laptop is unplugged." />
+        </SectionCard>
 
-      {/* Disk Cache & Storage */}
-      <section className="bg-panel border border-line rounded-xl p-5 space-y-4">
-        <div className="flex items-center gap-2 text-glow font-mono text-xs uppercase tracking-wider">
-          <HardDrive className="w-4 h-4" />
-          <span>Disk Cache & Storage</span>
-        </div>
-
-        <div className="space-y-2 p-3 bg-void border border-line rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-semibold text-ink">Max Storage Limit</div>
-              <div className="text-xs text-ink-dim">
-                Maximum disk space allocated for cached video wallpapers.
+        <SectionCard icon={HardDrive} title="Storage" subtitle="Downloaded wallpapers are cached on disk for instant replays">
+          <div className="space-y-3 px-4 py-4">
+            <div className="flex items-baseline justify-between">
+              <span className="text-[13px] font-medium text-ink">Cache limit</span>
+              <span className="font-mono text-[12px] text-glow">{settings.maxCacheSizeGb} GB</span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="100"
+              step="1"
+              aria-label="Maximum cache size in gigabytes"
+              value={settings.maxCacheSizeGb}
+              onChange={(e) => saveSettingsDebounced({ maxCacheSizeGb: Number(e.target.value) })}
+              className="w-full cursor-pointer accent-glow"
+            />
+            {cacheStatus && (
+              <div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                  <div className="h-full rounded-full bg-gradient-to-r from-white/60 to-white transition-[width] duration-500" style={{ width: `${usedPct}%` }} />
+                </div>
+                <p className="mt-1.5 font-mono text-[11px] text-ink-faint">
+                  {usedMb.toFixed(1)} MB of {limitGb.toFixed(1)} GB · {cacheStatus.count} cached {cacheStatus.count === 1 ? 'wallpaper' : 'wallpapers'}
+                </p>
               </div>
-            </div>
-            <span className="text-xs font-mono text-glow bg-glow/10 border border-glow/20 px-2.5 py-1 rounded">
-              {settings.maxCacheSizeGb} GB
-            </span>
+            )}
           </div>
-          <input
-            type="range"
-            min="1"
-            max="100"
-            step="1"
-            value={settings.maxCacheSizeGb}
-            onChange={(e) => saveSettingsDebounced({ maxCacheSizeGb: Number(e.target.value) })}
-            className="w-full accent-glow cursor-pointer"
-          />
-        </div>
-
-        <div className="flex items-center justify-between p-3 bg-void border border-line rounded-lg">
-          <div>
-            <div className="text-sm font-semibold text-ink">Free Up System Memory</div>
-            <div className="text-xs text-ink-dim">
-              Purges V8 RAM cache, flushes wallpaper video buffers, and optimizes system memory.
-            </div>
-          </div>
-          <button
-            onClick={handleFreeUpMemory}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-glow/10 border border-glow/30 text-xs font-mono text-glow hover:bg-glow/20 transition"
-          >
-            <Zap className="w-3.5 h-3.5" />
-            <span>Free Up RAM</span>
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between p-3 bg-void border border-line rounded-lg">
-          <div>
-            <div className="text-sm font-semibold text-ink">Clear Asset Cache</div>
-            <div className="text-xs text-ink-dim">
-              Evicts downloaded remote wallpaper videos and images.
-              {cacheStatus && (
-                <span className="block mt-1 font-mono text-[11px] text-glow">
-                  Current Usage: {(cacheStatus.usedBytes / (1024 * 1024)).toFixed(1)} MB / {(cacheStatus.limitBytes / (1024 * 1024 * 1024)).toFixed(1)} GB limit · {cacheStatus.count} cached {cacheStatus.count === 1 ? 'wallpaper' : 'wallpapers'}
-                </span>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={handleClearCache}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-panel-hover border border-line text-xs font-mono text-ink hover:border-glow/40 transition"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Clear Cache</span>
-          </button>
-        </div>
-
-        {clearedBytes !== null && (
-          <div className="text-xs font-mono text-glow bg-glow/10 border border-glow/20 rounded p-2 text-center">
-            Cleared {(clearedBytes / (1024 * 1024)).toFixed(1)} MB of cached assets.
-          </div>
-        )}
-      </section>
+          <Row title="Free up memory" description="Flushes video buffers and renderer caches. Playback restarts instantly.">
+            <button onClick={handleFreeUpMemory} className="btn-ghost">
+              <Zap className="h-4 w-4" /> Free up
+            </button>
+          </Row>
+          <Row title="Clear download cache" description="Removes downloaded wallpapers. They re-download the next time you use them.">
+            <button onClick={handleClearCache} className="btn-ghost">
+              <RefreshCw className="h-4 w-4" /> Clear
+            </button>
+          </Row>
+          {clearedBytes !== null && <div className="bg-glow/[0.06] px-4 py-3 text-[12px] text-glow">Freed {(clearedBytes / (1024 * 1024)).toFixed(1)} MB.</div>}
+        </SectionCard>
+      </div>
     </div>
   )
 }
