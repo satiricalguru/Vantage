@@ -1,7 +1,7 @@
 name: Release
 
 # Push a tag like v1.1.0 to build macOS (arm64 + x64) and Windows (x64 + arm64)
-# installers and attach them to a draft GitHub release.
+# installers and attach them to a draft GitHub release for that tag.
 on:
   push:
     tags: ['v*']
@@ -11,7 +11,24 @@ permissions:
   contents: write
 
 jobs:
+  draft:
+    # Create the draft up front so the parallel build jobs upload into one release
+    # instead of racing to create two.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create draft release if missing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --draft --title "Vantage $TAG" --notes-file .github/release-notes.md --target "$GITHUB_SHA"
+          fi
+
   build:
+    needs: draft
     strategy:
       fail-fast: false
       matrix:
@@ -44,7 +61,3 @@ jobs:
         working-directory: website
       - run: npm run build
         working-directory: website
-      - uses: actions/upload-artifact@v4
-        with:
-          name: website
-          path: website/dist
