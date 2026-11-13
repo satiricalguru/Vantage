@@ -87,7 +87,8 @@ fetch(`https://api.github.com/repos/${REPO}/releases/latest`)
     const find = (re) => assets.find((a) => re.test(a.name))
     const macArm = find(/arm64.*\.dmg$/i)
     const macIntel = find(/^(?!.*arm64).*\.dmg$/i)
-    const win = find(/\.exe$/i)
+    // Most Windows PCs are x64; fall back to any installer (e.g. arm64-only releases).
+    const win = find(/x64.*\.exe$/i) || find(/\.exe$/i)
     const mb = (a) => `${Math.round(a.size / 1e6)} MB`
     if (macArm || macIntel) btnMac.href = (macArm || macIntel).browser_download_url
     if (win) {

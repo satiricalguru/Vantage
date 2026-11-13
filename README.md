@@ -3,8 +3,12 @@
 <div align="center">
 
 <a href="https://vantage-five-navy.vercel.app">
-  <img src="assets/banner.svg" alt="Vantage — live wallpapers for Mac and Windows. Your desktop, alive." width="100%" />
+  <img src="assets/logo.png" alt="Vantage app icon" width="160" height="160" />
 </a>
+
+<h1>Vantage</h1>
+
+<p><i>Your desktop, alive.</i></p>
 
 <p>
   <b>Free, open-source live wallpapers.</b> 1,300+ motion wallpapers, procedural GPU scenes, every display — without slowing your machine down.
@@ -105,7 +109,7 @@ Plus three classic canvas scenes: **Quantum Field**, **Aurora Flow** and **Nebul
 | Platform | Get it | Notes |
 |:--|:--|:--|
 | 🍏 **macOS** (Apple Silicon &amp; Intel) | [Latest release](https://github.com/satiricalguru/Vantage/releases/latest) | Open the `.dmg` and drag Vantage to Applications |
-| 🪟 **Windows 10/11** | Coming soon | Builds are set up in CI; the first Windows release is still to be published |
+| 🪟 **Windows 10/11** (beta) | [Latest release](https://github.com/satiricalguru/Vantage/releases/latest) | Run `Vantage-Setup-…-x64.exe` (or `-arm64.exe`). The installer isn't code-signed yet, so SmartScreen may ask you to confirm |
 
 > [!NOTE]
 > If macOS says it can't verify the app, don't remove the quarantine flag. Use a release that's Developer ID–signed and notarized, and check its published checksum.
@@ -213,7 +217,7 @@ Vantage/
 - [x] GPU shader wallpapers
 - [x] Catalog audit and recategorization
 - [x] Landing page with download links that resolve the latest release
-- [ ] First published Windows release
+- [x] First Windows release (beta)
 - [ ] Developer ID signing and notarization for macOS
 - [ ] Playlists and timed rotation
 - [ ] More procedural scenes
