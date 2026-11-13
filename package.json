@@ -40,7 +40,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.6.2",
     "electron": "^43.8.10",
-    "electron-builder": "^25.1.0",
+    "electron-builder": "^26.18.0",
     "electron-vite": "^5.0.0",
     "postcss": "^8.5.32",
     "tailwindcss": "^3.4.17",
@@ -138,7 +138,8 @@
       "owner": "satiricalguru",
       "repo": "Vantage",
       "releaseType": "draft"
-    }
+    },
+    "npmRebuild": false
   },
   "allowScripts": {
     "better-sqlite3@13.1.1": true,
