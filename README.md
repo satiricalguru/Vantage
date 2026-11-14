@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<a href="https://vantage-five-navy.vercel.app">
+<a href="https://vantagewall.vercel.app">
   <img src="assets/logo.png" alt="Vantage app icon" width="160" height="160" />
 </a>
 
@@ -23,7 +23,7 @@
 </p>
 
 <p>
-  <a href="https://vantage-five-navy.vercel.app"><b>Website</b></a> ·
+  <a href="https://vantagewall.vercel.app"><b>Website</b></a> ·
   <a href="https://github.com/satiricalguru/Vantage/releases/latest"><b>Download</b></a> ·
   <a href="#-features">Features</a> ·
   <a href="#-generative-wallpapers">Generative</a> ·
@@ -114,14 +114,14 @@ Plus three classic canvas scenes: **Quantum Field**, **Aurora Flow** and **Nebul
 > [!NOTE]
 > If macOS says it can't verify the app, don't remove the quarantine flag. Use a release that's Developer ID–signed and notarized, and check its published checksum.
 
-Or visit **[vantage-five-navy.vercel.app](https://vantage-five-navy.vercel.app)** — the download button picks the right file for your Mac.
+Or visit **[vantagewall.vercel.app](https://vantagewall.vercel.app)** — the download button picks the right file for your Mac.
 
 ## 🌐 The website
 
 The landing page lives in [`website/`](website/README.md): a Three.js / WebGL scroll experience. A 3D monitor plays a wallpaper, the camera dives into the screen, the Vantage aperture falls through a tunnel lined with real wallpapers, and you land on the download.
 
 <div align="center">
-  <a href="https://vantage-five-navy.vercel.app"><img src="assets/media/website-dive.gif" alt="Scrolling through the website's dive: monitor, aperture in the void, text spreading apart, the wallpaper tunnel, and the download scene" width="90%" /></a>
+  <a href="https://vantagewall.vercel.app"><img src="assets/media/website-dive.gif" alt="Scrolling through the website's dive: monitor, aperture in the void, text spreading apart, the wallpaper tunnel, and the download scene" width="90%" /></a>
   <br />
   <sub><a href="assets/media/website-dive.mp4">Watch in higher quality (MP4)</a></sub>
 </div>
