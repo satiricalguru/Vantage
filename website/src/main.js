@@ -2,6 +2,11 @@ import './style.css'
 import Lenis from 'lenis'
 import thumbs from './thumbs.json'
 import { initMotion } from './motion.js'
+import { inject } from '@vercel/analytics'
+
+// Initialize Vercel Analytics
+inject()
+
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v))
 const range = (p, a, b) => clamp((p - a) / (b - a))
 
