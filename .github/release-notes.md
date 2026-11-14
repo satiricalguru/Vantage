@@ -1,6 +1,6 @@
 ## Vantage 1.1 — your desktop, wide awake
 
-**New website:** https://vantage-five-navy.vercel.app
+**New website:** https://vantagewall.vercel.app
 
 ### Downloads
 | Platform | File |
